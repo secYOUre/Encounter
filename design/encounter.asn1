@@ -1,0 +1,276 @@
+
+Encounter-15 {iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1)
+         pkcs-15(15) modules(1) pkcs-15(1)}
+
+
+DEFINITIONS IMPLICIT TAGS ::=
+BEGIN
+
+-- EXPORTS ALL --
+
+-- IMPORTS
+-- RecipientInfos, RecipientInfo, OriginatorInfo, sha-1,
+--         id-alg-CMS3DESwrap, id-alg-CMSRC2wrap, hMAC-SHA1, des-ede3-cbc
+--         FROM CryptographicMessageSyntax {iso(1) member-body(2)
+--         us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) modules(0)
+--         cms(1)}
+
+-- UNIVERSAL Types defined in 1993 and 1998 ASN.1
+-- and required by this specification
+
+-- Name, Attribute
+--         FROM InformationFramework informationFramework
+
+
+-- Constants
+encounter-ub-identifier          INTEGER ::= 255
+encounter-ub-userConsent         INTEGER ::= 15
+encounter-ub-reference		 INTEGER ::= 255
+encounter-ub-index               INTEGER ::= 65535
+encounter-ub-securityConditions  INTEGER ::= 255
+encounter-ub-label               INTEGER ::= encounter-ub-identifier
+
+-- Object Identifiers
+
+encounter OBJECT IDENTIFIER ::= { iso(1) member-body(2) us(840)
+                               rsadsi(113549) pkcs(1) pkcs-15(15)}
+-- Encounter arcs
+encounter-mo OBJECT IDENTIFIER ::= {encounter 1} -- Modules branch
+encounter-at OBJECT IDENTIFIER ::= {encounter 2} -- Attribute branch
+encounter-ct OBJECT IDENTIFIER ::= {encounter 3} -- Content type branch
+
+-- Content Types
+
+encounter-ct-EncounterToken OBJECT IDENTIFIER ::= {encounter 1}
+
+-- 
+
+-- Soft token related types and objects
+
+Path ::= SEQUENCE {
+    path        OCTET STRING,
+    index       INTEGER (0..encounter-ub-index) OPTIONAL,
+    length      [0] INTEGER (0..encounter-ub-index) OPTIONAL
+    }( WITH COMPONENTS {..., index PRESENT, length PRESENT}|
+       WITH COMPONENTS {..., index ABSENT, length ABSENT})
+
+
+alg-id-sha256 AlgorithmIdentifier {{DigestAlgorithms}} ::= {
+    algorithm  sha-256,
+    parameters SHA256Parameters : NULL}
+
+SHA256Parameters ::= NULL
+
+DigestInfoWithDefault ::= SEQUENCE {
+    digestAlg   AlgorithmIdentifier {{DigestAlgorithms}} DEFAULT alg-id-sha256,
+    digest      OCTET STRING (SIZE(8..128))
+}
+
+
+URL ::= CHOICE {
+    url         PrintableString,
+    urlWithDigest [3] SEQUENCE {
+        url     IA5String,
+        digest  DigestInfoWithDefault
+        }
+}
+
+ReferencedValue {Type} ::= CHOICE {
+    path        Path,
+    url         URL
+} (CONSTRAINED BY {-- 'path' or 'url' shall point to an object of
+   -- type -- Type})
+
+EnvelopedData {Type} ::= SEQUENCE {
+    version              INTEGER{v0(0),v1(1),v2(2),v3(3),v4(4)}(v0|v1|v2,...),
+    originatorInfo       [0] OriginatorInfo OPTIONAL,
+    recipientInfos       RecipientInfos,
+    encryptedContentInfo EncryptedContentInfo{Type},
+    unprotectedAttrs     [1] SET SIZE (1..MAX) OF Attribute OPTIONAL
+}
+
+PathOrObjects {ObjectType} ::= CHOICE {
+    path        Path,
+    objects     [0] SEQUENCE OF ObjectType,
+    ...,
+    indirect-protected [1] ReferencedValue {EnvelopedData {SEQUENCE OF ObjectType}},
+    direct-protected [2] EnvelopedData {SEQUENCE OF ObjectType}
+    }
+
+EncounterObjects ::= CHOICE {
+    privateKeys         [0] PrivateKeys,
+    publicKeys		[1] PublicKeys,
+    ... -- For future extensions
+}
+
+PrivateKeys  ::= PathOrObjects {PrivateKeyType}
+
+PublicKeys   ::= PathOrObjects {PublicKeyType}
+
+CommonObjectFlags ::= BIT STRING {
+    private     (0),
+    modifiable  (1)
+}
+
+AccessMode ::= BIT STRING {
+    read        (0),
+    update      (1),
+    execute     (2)
+}
+
+SecurityCondition ::= CHOICE {
+    authId      Identifier,
+    not         [0] SecurityCondition,
+    and         [1] SEQUENCE SIZE (2..encounter-ub-securityConditions)
+                OF SecurityCondition,
+    or          [2] SEQUENCE SIZE (2..encounter-ub-securityConditions)
+                OF SecurityCondition,
+    ... -- For future extensions
+}
+
+AccessControlRule ::= SEQUENCE {
+    accessMode          AccessMode,
+    securityCondition   SecurityCondition,
+    ... -- For future extensions
+}
+
+CommonObjectAttributes ::= SEQUENCE {
+    label               Label OPTIONAL,
+    flags               CommonObjectFlags OPTIONAL,
+    authId              Identifier OPTIONAL,
+    ...,
+    userConsent         INTEGER (1..encounter-ub-userConsent) OPTIONAL,
+    accessControlRules  SEQUENCE SIZE (1..MAX) OF AccessControlRule OPTIONAL
+} (CONSTRAINED BY {-- authId should be present in the IC card case if
+    -- flags.private is set. It must equal an authID in one AuthRecord
+    -- in the AODF -- })
+
+EncounterObject {ClassAttributes, SubClassAttributes, TypeAttributes}
+    ::= SEQUENCE {
+    commonObjectAttributes      CommonObjectAttributes,
+    classAttributes             ClassAttributes,
+    subClassAttributes          [0] SubClassAttributes OPTIONAL,
+    typeAttributes              [1] TypeAttributes
+}
+
+KeyUsageFlags ::= BIT STRING {
+    encrypt                     (0),
+    decrypt                     (1),
+    sign                        (2),
+    signRecover                 (3),
+    wrap                        (4),
+    unwrap                      (5),
+    verify                      (6),
+    verifyRecover               (7),
+    derive                      (8),
+    nonRepudiation              (9)
+}
+
+KeyAccessFlags ::= BIT STRING {
+    sensitive           (0),
+    extractable         (1),
+    alwaysSensitive     (2),
+    neverExtractable    (3),
+    local               (4)
+}
+
+Identifier ::= OCTET STRING (SIZE (0..encounter-ub-identifier))
+
+Reference ::= INTEGER (0..encounter-ub-reference)
+
+Label ::= UTF8String (SIZE(0..encounter-ub-label))
+
+
+CommonKeyAttributes ::= SEQUENCE {
+    iD           Identifier,
+    usage        KeyUsageFlags,
+    native       BOOLEAN DEFAULT TRUE,
+    accessFlags  KeyAccessFlags OPTIONAL,
+    keyReference Reference OPTIONAL,
+    startDate    GeneralizedTime OPTIONAL,
+    endDate      [0] GeneralizedTime OPTIONAL,
+    ... -- For future extensions
+}
+
+KEY-IDENTIFIER ::= CLASS {
+    &id  INTEGER UNIQUE,
+    &Value
+} WITH SYNTAX {
+    SYNTAX &Value IDENTIFIED BY &id
+}
+
+CredentialIdentifier {KEY-IDENTIFIER : IdentifierSet} ::= SEQUENCE {
+    idType  KEY-IDENTIFIER.&id ({IdentifierSet}),
+    idValue KEY-IDENTIFIER.&Value ({IdentifierSet}{@idType})
+}
+
+CommonPrivateKeyAttributes ::= SEQUENCE {
+    subjectName         Name OPTIONAL,
+    keyIdentifiers      [0] SEQUENCE OF CredentialIdentifier
+                        {{KeyIdentifiers}} OPTIONAL,
+    ... -- For future extensions
+}
+
+PrivateKeyObject {KeyAttributes} ::= EncounterObject {
+    CommonKeyAttributes, CommonPrivateKeyAttributes, KeyAttributes}
+
+PublicKeyOperations ::= Operations
+
+Operations ::= BIT STRING {
+        compute-checksum  (0), -- H/W computation of checksum
+        compute-signature (1), -- H/W computation of signature
+        verify-checksum   (2), -- H/W verification of checksum
+        verify-signature  (3), -- H/W verification of signature
+        encipher          (4), -- H/W encryption of data
+        decipher          (5), -- H/W decryption of data
+        hash              (6), -- H/W hashing
+        generate-key      (7)  -- H/W key generation
+        }
+
+RSAPrivateKeyObject ::= SEQUENCE {
+    modulus             [0] INTEGER OPTIONAL, -- n
+    publicExponent      [1] INTEGER OPTIONAL, -- e
+    privateExponent     [2] INTEGER OPTIONAL, -- d
+    prime1              [3] INTEGER OPTIONAL, -- p
+    prime2              [4] INTEGER OPTIONAL, -- q
+    exponent1           [5] INTEGER OPTIONAL, -- d mod (p-1)
+    exponent2           [6] INTEGER OPTIONAL, -- d mod (q-1)
+    coefficient         [7] INTEGER OPTIONAL -- inv(q) mod p
+} (CONSTRAINED BY {-- must be possible to reconstruct modulus and
+   -- privateExponent from selected fields --})
+
+ObjectValue { Type } ::= CHOICE {
+    indirect            ReferencedValue {Type},
+    direct              [0] Type,
+    indirect-protected  [1] ReferencedValue {EnvelopedData {Type}},
+    direct-protected    [2] EnvelopedData {Type}
+    }(CONSTRAINED BY {-- if indirection is being used, then it is
+    -- expected that the reference points either to a (possibly
+    -- enveloped) object of type -- Type -- or (key case) to a card-
+    -- specific key file --})
+
+KeyInfo {ParameterType, OperationsType} ::= CHOICE {
+    reference           Reference,
+    paramsAndOps        SEQUENCE {
+        parameters              ParameterType,
+        supportedOperations     OperationsType OPTIONAL
+        }
+}
+PrivatePaillierKeyAttributes ::= SEQUENCE {
+    value               ObjectValue {RSAPrivateKeyObject},
+    modulusLength       INTEGER, -- modulus length in bits, e.g. 1024
+    keyInfo             KeyInfo {NULL, PublicKeyOperations} OPTIONAL,
+    ... -- For future extensions
+}
+
+PrivateKeyType ::= CHOICE {
+    privatePaillierKey    [32]  PrivateKeyObject {PrivatePaillierKeyAttributes},
+    ... -- For future extensions
+}
+
+EncounterTokens	::= SEQUENCE {
+	version 		INTEGER {v1(0)} (v1, ...),
+	encounterObjects	SEQUENCE OF EncounterObjects }
+
+
+END
