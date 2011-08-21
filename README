@@ -1,0 +1,75 @@
+
+encounter - cryptocounters for privacy-preserving technologies
+==============================================================
+
+Copyright (c) 2006-2011 - Alfonso De Gregorio <adg@crypto.lo.gy>
+secYOUre by SecurityPillar Ltd. - All rights reserved.
+
+
+
+Encounter is a software library aimed at providing a production-grade
+implementation of cryptographic counters.
+
+A cryptographic counters is a public string representing an encryption 
+of a quantity, satisfying the following properties:
+
+1. Subjects with access to the *public-key* can update the 
+   encrypted counter by an arbitrary amount, by means of increment
+   or decrement operations and without first decrypting the value 
+   (i.e., the operation is performed over encrypted data);
+
+2. The plaintext value is hidden from all participants except the entity
+   holding some secret key;
+
+3. The adversary can only learn if the cryptographic counter was
+   updated (i.e., information about whether the counter was incremented
+   or decremented is kept hidden to all participants except the
+   secret-key holder and the updating entity).
+
+
+Applications
+============
+
+Possible applications of cryptographic counters include:
+
+- Privacy-preserving statistics gathering in a honest-but-curious 
+  threat-model;
+- Secure electronic voting;
+- Digital Rights Management.
+
+
+
+Mechanisms
+==========
+
+Encounter will support different cryptocounters schemes, with different
+security/performance trade-offs. 
+
+To date, Encounter implements a cryptocounter based on the Paillier 
+public-key cryptographic scheme - please, see below the credits section.
+
+The Paillier PKCS is additive homomorphic cryptosystem providing
+semantic security against chosen-plaintext attacks (IND-CPA)
+<http://en.wikipedia.org/wiki/Paillier_cryptosystem>
+
+Encounter provides a mean to diminish the possibility of correlations.
+In fact, users can probabilistically re-encrypt Paillier-based 
+cryptocounter without changing the underlying value. Please, refer to
+function encounter_touch().
+
+
+
+Credits
+=======
+
+The Paillier-based cryptocounter code is based on the implementation by
+Adam Young and Moti Yung in their clever Malicious Cryptography and the
+upcoming Advances in Cryptovirology <http://www.cryptovirology.com/>
+
+
+Encounter implements a speed-up technique described in Paillier's
+
+'Public-Key Cryptosystems Based on Composite Degree Residuosity Classes'
+   Published in J. Stern, Ed., Advances in Cryptology  EUROCRYPT 99,
+   vol. 1592 of Lecture Notes in Computer Science, pp. 223-238,
+   Springer-Verlag, 1999.
