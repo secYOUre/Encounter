@@ -19,10 +19,10 @@ struct ec_keyset_s;
  * compiles. */
 #define	ENCOUNTER_LIB_VER_MAJOR	0
 #define ENCOUNTER_LIB_VER_MINOR	1
-#define ENCOUNTER_LIB_VER_PATCH	0
+#define ENCOUNTER_LIB_VER_PATCH	6
 
 /* xxyyzz, where x=major, y=minor, z=patch */
-#define	ENCOUNTER_LIB_VERSION	"0.1.0"
+#define	ENCOUNTER_LIB_VERSION	"0.1.6"
 
 
 
@@ -137,7 +137,14 @@ typedef enum {
 
 #if ( defined( WIN32 ) || defined( _WIN32 ) || defined( __WIN32__ ) || \
        defined( _WIN32_WCE ) ) && !( defined( STATIC_LIB ) || defined(_SCCTK))
-  #define ENCOUNTER_PTR *                          /* General pointer */
+  #define EC_PTR *                          /* General pointer */
+  #if defined( _WIN32_WCE )
+        #define EC_CHR wchar_t
+  #else
+        #define EC_CHR char
+  #endif /* WinCE vs. Win32 */
+  #define EC_STR EC_CHR *
+
   #if defined( __BORLANDC__ ) && ( __BORLANDC__ < 0x500 )
         #ifdef _ENCOUNTER_PRIV_H_
 	  /* BC++ DLL export ret. val */
@@ -156,11 +163,15 @@ typedef enum {
         #endif /* _ENCOUNTER_PRIV_H_ */
   #endif /* BC++ vs.VC++ DLL functions */
 #elif defined( _WINDOWS ) && !defined( STATIC_LIB )
-  #define ENCOUNTER_PTR FAR *                           /* DLL pointer */
+  #define EC_PTR FAR *                    /* DLL pointer */
+  #define EC_CHR char
+  #define EC_STR EC_CHR FAR *      /* DLL string pointer */
   #define ENCOUNTER_RET encounter_err_t FAR PASCAL _export  /* DLL ret. val */
 #elif defined( __BEOS__ )
 /* #include <BeBuild.h>                         // _EXPORT/_IMPORT defines */
-  #define ENCOUNTER_PTR *
+  #define EC_PTR *
+  #define EC_CHR char
+  #define EC_STR EC_CHR *
   #ifdef _STATIC_LINKING
         #define ENCOUNTER_RET encounter_err_t
   #else
@@ -174,16 +185,52 @@ typedef enum {
   #endif /* Static vs. shared lib */
 #elif defined( __SYMBIAN32__ )
   #ifdef _ENCOUNTER_PRIV_H_
-        #define ENCOUNTER_RET   EXPORT_C                                        /* DLL e
-xport ret.val.*/
+	/* DLL export ret. val */
+        #define ENCOUNTER_RET   EXPORT_C     
   #else
-        #define ENCOUNTER_RET   IMPORT_C                                        /* DLL i
-mport ret.val.*/
-  #endif /* CRYPT_DEFINED */
+	/* DLL import ret. val */
+        #define ENCOUNTER_RET   IMPORT_C  
+  #endif /* _ENCOUNTER_PRIV_H_ */
 #else
-  #define ENCOUNTER_PTR *
+  #define EC_PTR *
+  #define EC_CHR char
+  #define EC_STR EC_CHR *
   #define ENCOUNTER_RET encounter_err_t
 #endif /* Windows vs.everything else function types */
+
+/* Symbolic defines to make it clearer how the function parameters behave */
+
+#define EC_IN            const      /* Input-only */
+#define EC_IN_OPT        const      /* Input-only, may be NULL */
+#define EC_OUT                      /* Output-only */
+#define EC_OUT_OPT                  /* Output-only, may be NULL */
+#define EC_INOUT                    /* Modified in-place */
+
+/* Additional defines for compilers that provide extended function and
+   function-parameter checking */
+
+#if defined( __GNUC__ ) && ( __GNUC__ >= 4 )
+  #define EC_CHECK_RETVAL     __attribute__(( warn_unused_result ))
+  #ifdef _ENCOUNTER_PRIV_H_
+   /* Too dangerous to use inside encounter */
+   #define EC_NONNULL_ARG( argIndex )
+  #else
+   #define EC_NONNULL_ARG( argIndex ) __attribute__(( nonnull argIndex))
+  #endif /* _ENCOUNTER_PRIV_H */
+#elif defined( _MSC_VER ) && defined( _PREFAST_ )
+  #define EC_CHECK_RETVAL                __checkReturn
+  #define EC_NONNULL_ARG( argIndex )
+  #undef EC_IN_OPT
+  #define EC_IN_OPT                      __in_opt const
+  #undef EC_OUT_OPT
+  #define EC_OUT_OPT                     __out_opt
+  #undef EC_INOUT
+  #define EC_INOUT                       __inout
+#else
+  #define EC_CHECK_RETVAL
+  #define EC_NONNULL_ARG( argIndex )
+#endif /* Compiler-specific annotations */
+
 
 
 __BEGIN_DECLS
@@ -191,74 +238,90 @@ __BEGIN_DECLS
 /** Create and configure a new Encounter context. 
   * This will need to be supplied as the first parameter of each
   * Encounter API */
-ENCOUNTER_RET encounter_init __P((const unsigned int, \
-						encounter_t **));
+EC_CHECK_RETVAL EC_NONNULL_ARG( (2) ) \
+ENCOUNTER_RET encounter_init __P((const unsigned int, encounter_t **));
 
 /** Return last errno */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1) ) \
 ENCOUNTER_RET encounter_error __P((encounter_t *));
 
 /** Generate a keypair according to the scheme and size selected 
  * respectively by the second and third parametes */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 4, 5) ) \
 ENCOUNTER_RET encounter_keygen __P((encounter_t *, encounter_key_t, \
 			unsigned int, ec_keyctx_t **, ec_keyctx_t **));
 
 /** Accepts a key context and returns a new cryptographic cnt handle */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3) ) \
 ENCOUNTER_RET encounter_new_counter __P((encounter_t *, \
 					ec_keyctx_t *, ec_count_t **));
 
 /** Dispose the cryptographic counter referenced by the 2nd parameter */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2) )\
 ENCOUNTER_RET encounter_dispose_counter __P((encounter_t *, \
 							ec_count_t *));
 
 /** Increment the cryptographic counter by the amount in a,
   * without first decrypting it. */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3) )\
 ENCOUNTER_RET encounter_inc __P((encounter_t *, ec_keyctx_t *, \
 					ec_count_t *, const int));
 
 /** Touch the crypto counter by probabilistically re-rencrypting it.
   * The plaintext counter is not affected */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3) )\
 ENCOUNTER_RET encounter_touch __P((encounter_t *, ec_keyctx_t *, \
 							ec_count_t *));
 
 /** Decrypt the cryptographic counter, returning the plaintext 
   * Accepts the handles of the cryptographic counter and private key */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 4) )\
 ENCOUNTER_RET encounter_decrypt __P((encounter_t *, ec_count_t *, \
 			ec_keyctx_t *, unsigned long long int *));
 
 /** Dispose the cryptographic counter referenced by the handle */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2) )\
 ENCOUNTER_RET encounter_dispose_keyctx __P((encounter_t *, \
 							ec_keyctx_t *));
 
 
 /** Add a public key to keyset */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3) )\
 ENCOUNTER_RET encounter_add_publicKey __P((encounter_t *, \
 					ec_keyctx_t *,  ec_keyset_t *));
 
 /** Add a private key to keyset */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3 ) )\
 ENCOUNTER_RET encounter_add_privateKey __P((encounter_t *, \
 			ec_keyctx_t *,  ec_keyset_t *, const char *));
 
 /** Get a public key from a keyset */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3 ) )\
 ENCOUNTER_RET	encounter_get_publicKey __P((encounter_t *, \
 			ec_keyset_t *, ec_keyctx_t **));
 
 /** Get a private key from a keyset */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 4 ) )\
 ENCOUNTER_RET	encounter_get_privateKey __P((encounter_t *, \
 			ec_keyset_t *, const char *, ec_keyctx_t **));
 
 /** Persist a cryptographic counter to a file */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3 ) )\
 ENCOUNTER_RET encounter_persist_counter __P((encounter_t *, \
 					ec_count_t *, const char *));
 
 /** Get a cryptographic counter from a file */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3 ) )\
 ENCOUNTER_RET encounter_get_counter __P((encounter_t *, \
 					const char *, ec_count_t **));
 
 /** Create a keyset handle */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 3, 5 ) )\
 ENCOUNTER_RET encounter_create_keyset __P((encounter_t *,\
       encounter_keyset_t,  const char *, const char *, ec_keyset_t **));
 
 /** Dispose a keyset handle */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2) )\
 ENCOUNTER_RET encounter_dispose_keyset __P((encounter_t *, \
 						ec_keyset_t *));
 
