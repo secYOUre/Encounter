@@ -1,4 +1,4 @@
-- Make public header files C++ friendly
+- [DONE] Make public header files C++ friendly
 - Add a mechanism to probabilistically re-encrypt the crypto-counters
   on a periodic basis (e.g, threads + timers, or touch upon an async
   system event)

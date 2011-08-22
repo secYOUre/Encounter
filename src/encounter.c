@@ -5,7 +5,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include "encounter.h"
 #include "encounter_priv.h"
 #include "utils.h"
 

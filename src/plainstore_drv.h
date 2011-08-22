@@ -5,6 +5,7 @@
 #include <sys/time.h>
 
 #include "encounter.h"
+#include "encounter_priv.h"
 
 
 /* TODO use __BEGIN_DECLS */

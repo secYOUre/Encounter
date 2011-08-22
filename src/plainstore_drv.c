@@ -4,9 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "plainstore_drv.h"
-#include "encounter.h"
 #include "encounter_priv.h"
+#include "plainstore_drv.h"
 #include "utils.h"
 
 #define ENCOUNTER_STORE_PLAIN_MAXLINE   1024+16384

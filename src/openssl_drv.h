@@ -6,7 +6,6 @@
 
 #include <openssl/bn.h>
 
-#include "encounter.h"
 #include "encounter_priv.h"
 
 
