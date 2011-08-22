@@ -123,8 +123,8 @@ int main(int argc, char *argv[])
 
 
 	printf("Counter increment: succeeded\n");
-	printf("Cycles per %d counter increments: %ld\n", CYCLES, tmin);
-
+	printf("Cycles per one step counter increment by %d: %ld\n", \
+						CYCLES, tmin);
 	tmin = 0xffffffff;
 
 	for (i=0; i < CYCLES; ++i) {

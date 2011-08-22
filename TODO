@@ -2,7 +2,7 @@
 - Add a mechanism to probabilistically re-encrypt the crypto-counters
   on a periodic basis (e.g, threads + timers, or touch upon an async
   system event)
-- Reimplement the increment operator to encrypt the addend and add it
+- [DONE] Reimplement the increment operator to encrypt the addend and add it
   in one step
 - [DONE] Implement a dispose counter API 
 - [DONE] improve error handling

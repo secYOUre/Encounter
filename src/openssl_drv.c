@@ -63,6 +63,10 @@ static encounter_err_t IsInZnSquaredstar(encounter_t *, \
 static encounter_err_t encounter_crypto_openssl_paillierInc(\
 	encounter_t *, BIGNUM *, const ec_keyctx_t *, BN_CTX *);
 
+static encounter_err_t encounter_crypto_openssl_paillierInc_amount(\
+	encounter_t *, BIGNUM *, const ec_keyctx_t *, BN_CTX *, \
+	unsigned int amount);
+
 static encounter_err_t encounter_crypto_openssl_fastCRT(\
 	encounter_t *, BIGNUM *g, const BIGNUM *g1, const BIGNUM *p, \
 	const BIGNUM *g2, const BIGNUM *q, const BIGNUM *qInv, \
@@ -582,12 +586,14 @@ static encounter_err_t encounter_crypto_openssl_paillierEncrypt(\
 	BIGNUM *r     = BN_CTX_get(bnctx);
 
 
-	BN_mod_exp(tmp, pubK->k.paillier_pubK.g, m, \
-			pubK->k.paillier_pubK.nsquared, bnctx);
+	if (!BN_mod_exp(tmp, pubK->k.paillier_pubK.g, m, \
+			pubK->k.paillier_pubK.nsquared, bnctx))
+		OPENSSL_ERROR(end);
 
 	for (;;)
    	{
-   		BN_rand_range(r, pubK->k.paillier_pubK.n);
+   		if (!BN_rand_range(r, pubK->k.paillier_pubK.n))
+			OPENSSL_ERROR(end);
    		if (IsInZnstar(ctx, r,pubK->k.paillier_pubK.n, \
 				bnctx, &in) != ENCOUNTER_OK) {
 			OPENSSL_ERROR(end); 
@@ -673,9 +679,9 @@ encounter_err_t encounter_crypto_openssl_inc(encounter_t *ctx, ec_count_t *count
 	BN_CTX *bnctx = BN_CTX_new();
 	int i;
 
-	for (i = 0; i < a; ++i) 
-		if (encounter_crypto_openssl_paillierInc(ctx, counter->c, pubK, bnctx) != ENCOUNTER_OK) 
-			goto end;
+	if (encounter_crypto_openssl_paillierInc_amount(ctx, \
+			counter->c, pubK, bnctx, a) != ENCOUNTER_OK)
+		OPENSSL_ERROR(end);
 			
 	ctx->rc = ENCOUNTER_OK;
 
@@ -695,7 +701,7 @@ static encounter_err_t encounter_crypto_openssl_paillierInc(\
 	BIGNUM *r = BN_CTX_get(bnctx);
 	bool in = false;
 
-	if (!r || !tmp) goto end;
+	if (!r) OPENSSL_ERROR(end);
 
 #if 0
 	fprintf(stdout, "paillier inc: before increment: ");
@@ -731,6 +737,65 @@ static encounter_err_t encounter_crypto_openssl_paillierInc(\
 
 end:
 	if (tmp) BN_clear(tmp); 
+	if (r)   BN_clear(r);
+	BN_CTX_end(bnctx);
+
+	return ctx->rc;
+}
+
+static encounter_err_t encounter_crypto_openssl_paillierInc_amount(\
+  encounter_t *ctx, BIGNUM *c, const ec_keyctx_t *pubK, BN_CTX *bnctx,\
+	unsigned int amount)
+{
+	BN_CTX_start(bnctx);
+	BIGNUM *tmp = BN_CTX_get(bnctx);
+	BIGNUM *tmp2 = BN_CTX_get(bnctx);
+	BIGNUM *r = BN_CTX_get(bnctx);
+	BIGNUM *m = BN_CTX_get(bnctx);
+	bool in = false;
+
+	if (!m) OPENSSL_ERROR(end);
+	if (!BN_set_word(m, amount)) OPENSSL_ERROR(end);
+
+#if 0
+	fprintf(stdout, "paillier inc: before increment: ");
+	BN_print_fp(stdout, c);
+	fprintf(stdout, "\n");
+#endif
+
+	if (!BN_mod_exp(tmp2, pubK->k.paillier_pubK.g, m, \
+			pubK->k.paillier_pubK.nsquared, bnctx))
+		OPENSSL_ERROR(end);
+
+	if (!BN_mod_mul(c, c, tmp2, \
+			pubK->k.paillier_pubK.nsquared, bnctx) )  
+		OPENSSL_ERROR(end);
+	
+	for (;;)
+   	{
+		if (!BN_rand_range(r, pubK->k.paillier_pubK.n) )
+			OPENSSL_ERROR(end);
+   		if (IsInZnstar(ctx, r, pubK->k.paillier_pubK.n, \
+				bnctx, &in)  != ENCOUNTER_OK)
+			OPENSSL_ERROR(end);
+		if (in) break;
+   	}
+	if (!BN_mod_exp(tmp, r, pubK->k.paillier_pubK.n, \
+			pubK->k.paillier_pubK.nsquared, bnctx) ) 
+		OPENSSL_ERROR(end);
+	if (!BN_mod_mul(c, c, tmp, pubK->k.paillier_pubK.nsquared, bnctx))
+		OPENSSL_ERROR(end);
+
+#if 0
+	fprintf(stdout, "paillier inc: after incrementing: ");
+	BN_print_fp(stdout, c);
+	fprintf(stdout, "\n");
+#endif
+	ctx->rc = ENCOUNTER_OK;
+
+end:
+	if (tmp) BN_clear(tmp); 
+	if (tmp2) BN_clear(tmp); 
 	if (r)   BN_clear(r);
 	BN_CTX_end(bnctx);
 
