@@ -1,6 +1,6 @@
 
-encounter - cryptocounters for privacy-preserving technologies
-==============================================================
+encounter - cryptocounters for your PETs
+========================================
 
 Copyright (c) 2006-2011 - Alfonso De Gregorio <adg@crypto.lo.gy>
 secYOUre by SecurityPillar Ltd. - All rights reserved.
@@ -10,7 +10,7 @@ secYOUre by SecurityPillar Ltd. - All rights reserved.
 Encounter is a software library aimed at providing a production-grade
 implementation of cryptographic counters.
 
-A cryptographic counters is a public string representing an encryption 
+A cryptographic counter is a public string representing an encryption 
 of a quantity, satisfying the following properties:
 
 1. Subjects with access to the *public-key* can update the 
@@ -24,7 +24,8 @@ of a quantity, satisfying the following properties:
 3. The adversary can only learn if the cryptographic counter was
    updated (i.e., information about whether the counter was incremented
    or decremented is kept hidden to all participants except the
-   secret-key holder and the updating entity).
+   secret-key holder and the updating entity -- honest-but-curious
+   threat model).
 
 
 Applications
@@ -42,8 +43,8 @@ Possible applications of cryptographic counters include:
 Mechanisms
 ==========
 
-Encounter will support different cryptocounters schemes, with different
-security/performance trade-offs. 
+Encounter will support a number of cryptocounters schemes, with 
+different security/performance trade-offs. 
 
 To date, Encounter implements a cryptocounter based on the Paillier 
 public-key cryptographic scheme - please, see below the credits section.
