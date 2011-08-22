@@ -5,4 +5,5 @@
 - Reimplement the increment operator to encrypt the addend and add it
   in one step
 - [DONE] Implement a dispose counter API 
-- improve error handling
+- [DONE] improve error handling
+- support extended function and function-parameter checking

@@ -58,14 +58,15 @@ static encounter_err_t IsInZnstar(encounter_t *, const BIGNUM *, \
 				const BIGNUM *, BN_CTX *, bool *);
 
 static encounter_err_t IsInZnSquaredstar(encounter_t *, \
-		const BIGNUM *a, const BIGNUM *n, BN_CTX *bnctx, bool *);
+	     const BIGNUM *a, const BIGNUM *n, BN_CTX *bnctx, bool *);
 
 static encounter_err_t encounter_crypto_openssl_paillierInc(\
 	encounter_t *, BIGNUM *, const ec_keyctx_t *, BN_CTX *);
 
 static encounter_err_t encounter_crypto_openssl_fastCRT(\
-	BIGNUM *g, const BIGNUM *g1, const BIGNUM *p, const BIGNUM *g2,\
-		 const BIGNUM *q, const BIGNUM *qInv, BN_CTX *bnctx);
+	encounter_t *, BIGNUM *g, const BIGNUM *g1, const BIGNUM *p, \
+	const BIGNUM *g2, const BIGNUM *q, const BIGNUM *qInv, \
+							BN_CTX *bnctx);
 
 static encounter_err_t encounter_crypto_openssl_new_paillierGenerator(\
 			encounter_t *,	BIGNUM *, const ec_keyctx_t *);
@@ -422,9 +423,10 @@ static encounter_err_t encounter_crypto_openssl_new_paillierGenerator(\
 		OPENSSL_ERROR(end);
 	if (!BN_mod_inverse(inv, tmp, privK->k.paillier_privK.psquared, bnctx))
 		OPENSSL_ERROR(end);
-	if (encounter_crypto_openssl_fastCRT(g, gsubp,  \
+	if (encounter_crypto_openssl_fastCRT(ctx, g, gsubp,  \
 		privK->k.paillier_privK.psquared, gsubq, \
-		privK->k.paillier_privK.qsquared, inv, bnctx) != ENCOUNTER_OK)
+		privK->k.paillier_privK.qsquared, inv, bnctx) \
+			!= ENCOUNTER_OK)
 		OPENSSL_ERROR(end);	
 
 	ctx->rc = ENCOUNTER_OK;
@@ -593,10 +595,12 @@ static encounter_err_t encounter_crypto_openssl_paillierEncrypt(\
 		if (in == true) break;
    	}
 
-	BN_mod_exp(tmp2, r, pubK->k.paillier_pubK.n, \
-		pubK->k.paillier_pubK.nsquared, bnctx);
-	BN_mod_mul(c, tmp, tmp2, \
-			pubK->k.paillier_pubK.nsquared, bnctx);
+	if (!BN_mod_exp(tmp2, r, pubK->k.paillier_pubK.n, \
+		pubK->k.paillier_pubK.nsquared, bnctx))
+		OPENSSL_ERROR(end);
+	if (!BN_mod_mul(c, tmp, tmp2, \
+			pubK->k.paillier_pubK.nsquared, bnctx))
+		OPENSSL_ERROR(end);
 
 	ctx->rc = ENCOUNTER_OK;
 
@@ -670,13 +674,16 @@ encounter_err_t encounter_crypto_openssl_inc(encounter_t *ctx, ec_count_t *count
 	int i;
 
 	for (i = 0; i < a; ++i) 
-		encounter_crypto_openssl_paillierInc(ctx, counter->c, pubK, bnctx);
+		if (encounter_crypto_openssl_paillierInc(ctx, counter->c, pubK, bnctx) != ENCOUNTER_OK) 
+			goto end;
+			
+	ctx->rc = ENCOUNTER_OK;
 
-	BN_CTX_free(bnctx);
+end:
 	/* Update the time of last modification */
 	time(&(counter->lastUpdated));
 
-	ctx->rc = ENCOUNTER_OK;
+	BN_CTX_free(bnctx);
 	return ctx->rc;
 }
 
@@ -776,6 +783,8 @@ end:
 encounter_err_t encounter_crypto_openssl_decrypt(encounter_t *ctx, \
      ec_count_t *counter, ec_keyctx_t *privK, unsigned long long int *a)
 {
+	if (!ctx || !counter || !privK ||  !a) goto end;
+
 	BN_CTX *bnctx = BN_CTX_new();
 	BN_CTX_start(bnctx);
 	BIGNUM *m = BN_CTX_get(bnctx);
@@ -786,74 +795,113 @@ encounter_err_t encounter_crypto_openssl_decrypt(encounter_t *ctx, \
 	qmin1 = BN_CTX_get(bnctx);
 	msubp = BN_CTX_get(bnctx); msubq = BN_CTX_get(bnctx);
 
+	if (!msubq) OPENSSL_ERROR(end);
+
 	/* p-1 and q-1 */
-	BN_sub(pmin1, privK->k.paillier_privK.p, BN_value_one());
-	BN_sub(qmin1, privK->k.paillier_privK.q, BN_value_one());
+	if (!BN_sub(pmin1, privK->k.paillier_privK.p, BN_value_one()))
+		OPENSSL_ERROR(end);
+	if (!BN_sub(qmin1, privK->k.paillier_privK.q, BN_value_one()))
+		OPENSSL_ERROR(end);
 
 	/* c^(p-1) */
-	BN_mod(tmp, counter->c, privK->k.paillier_privK.psquared, bnctx);
-	BN_mod_exp(tmp, tmp, pmin1, privK->k.paillier_privK.psquared, bnctx);
+	if (!BN_mod(tmp, counter->c, \
+			privK->k.paillier_privK.psquared, bnctx))
+		OPENSSL_ERROR(end);
+	if (!BN_mod_exp(tmp, tmp, pmin1, \
+			privK->k.paillier_privK.psquared, bnctx))
+		OPENSSL_ERROR(end);
 
 	/* m_p = L_p ( c^(p-1) mod p^2 ) h_p mod p */
-	encounter_crypto_openssl_fastL(ctx, tmp, tmp, \
-			privK->k.paillier_privK.p, \
-			privK->k.paillier_privK.pinvmod2tow, bnctx);
-	BN_mod_mul(msubp, tmp, privK->k.paillier_privK.hsubp, \
-			privK->k.paillier_privK.p, bnctx);
+	if (encounter_crypto_openssl_fastL(ctx, tmp, tmp, \
+		privK->k.paillier_privK.p, \
+		privK->k.paillier_privK.pinvmod2tow, bnctx) \
+		!= ENCOUNTER_OK)
+		OPENSSL_ERROR(end);
+
+	if (!BN_mod_mul(msubp, tmp, privK->k.paillier_privK.hsubp, \
+			privK->k.paillier_privK.p, bnctx))
+		OPENSSL_ERROR(end);
+
 
 	/* c^(q-1) */
-	BN_mod(tmp, counter->c, privK->k.paillier_privK.qsquared, bnctx);
-	BN_mod_exp(tmp, tmp, qmin1, privK->k.paillier_privK.qsquared,bnctx);
+	if (!BN_mod(tmp, counter->c, \
+		privK->k.paillier_privK.qsquared, bnctx))
+		OPENSSL_ERROR(end);
+	if (!BN_mod_exp(tmp, tmp, qmin1, \
+		privK->k.paillier_privK.qsquared,bnctx))
+		OPENSSL_ERROR(end);
 
 	/* m_q = L_q( c^(q-1) mod q^2 ) h_q mod q */
-	encounter_crypto_openssl_fastL(ctx, tmp, tmp, \
+	if (encounter_crypto_openssl_fastL(ctx, tmp, tmp, \
 			privK->k.paillier_privK.q, \
-			privK->k.paillier_privK.qinvmod2tow, bnctx);
-	BN_mod_mul(msubq, tmp, privK->k.paillier_privK.hsubq, \
-			privK->k.paillier_privK.q, bnctx);
+			privK->k.paillier_privK.qinvmod2tow, bnctx) \
+		!= ENCOUNTER_OK)
+		OPENSSL_ERROR(end);
+	if (!BN_mod_mul(msubq, tmp, privK->k.paillier_privK.hsubq, \
+			privK->k.paillier_privK.q, bnctx))
+		OPENSSL_ERROR(end);
 
 	/* m = CRT(m_p, m_q) mod pq */
-	encounter_crypto_openssl_fastCRT(m, msubp, \
+	if (encounter_crypto_openssl_fastCRT(ctx, m, msubp, \
 			privK->k.paillier_privK.p, msubq, \
 			privK->k.paillier_privK.q, \
-			privK->k.paillier_privK.qInv, bnctx);
+			privK->k.paillier_privK.qInv, bnctx) \
+		!= ENCOUNTER_OK)
+		OPENSSL_ERROR(end);
 
 	/* Make the plaintext counter available via a */
 	char *plainC = BN_bn2dec(m);
+	if (!plainC) OPENSSL_ERROR(end);
+
 	*a = strtoul(plainC, NULL, 10);
 	OPENSSL_free(plainC);
 
-	BN_clear(tmp); BN_clear(pmin1); BN_clear(qmin1);
-	BN_clear(msubp); BN_clear(msubq);
-	BN_clear(m);
-
-	BN_CTX_end(bnctx);
-	BN_CTX_free(bnctx);
-
 	ctx->rc = ENCOUNTER_OK;
+
+end:
+	if (tmp)   BN_clear(tmp); 
+	if (pmin1) BN_clear(pmin1); 
+	if (qmin1) BN_clear(qmin1);
+	if (msubp) BN_clear(msubp); 
+	if (msubq) BN_clear(msubq);
+	if (m)     BN_clear(m);
+
+	if (bnctx) BN_CTX_end(bnctx);
+	if (bnctx) BN_CTX_free(bnctx);
+
 	return ctx->rc;
 }
 
 
-static encounter_err_t encounter_crypto_openssl_fastCRT(BIGNUM *g, const BIGNUM *g1, const BIGNUM *p, const BIGNUM *g2, const BIGNUM *q, const BIGNUM *qInv, BN_CTX *bnctx)
+static encounter_err_t encounter_crypto_openssl_fastCRT(\
+	encounter_t *ctx, BIGNUM *g, const BIGNUM *g1, const BIGNUM *p,\
+   const BIGNUM *g2, const BIGNUM *q, const BIGNUM *qInv, BN_CTX *bnctx)
 {
+	if (!ctx || !g || !g1 || !p || !g2 || !q || !qInv || !bnctx)
+		goto end;
+
 	BN_CTX_start(bnctx);
 	BIGNUM *tmp = BN_CTX_get(bnctx);
 	BIGNUM *h = BN_CTX_get(bnctx);
 
-	BN_sub(tmp,g1,g2);
+	if (!h) OPENSSL_ERROR(end);
+
+	if (!BN_sub(tmp,g1,g2)) OPENSSL_ERROR(end);
 	if (BN_is_neg(tmp))
-   		BN_add(tmp,tmp,p);
+   		if (!BN_add(tmp,tmp,p)) OPENSSL_ERROR(end);
 
-	BN_mod_mul(h,tmp,qInv,p, bnctx);
-	BN_mul(tmp,q,h, bnctx);
-	BN_add(g,g2,tmp);
+	if (!BN_mod_mul(h,tmp,qInv,p, bnctx)) OPENSSL_ERROR(end);
+	if (!BN_mul(tmp,q,h, bnctx)) OPENSSL_ERROR(end);
+	if (!BN_add(g,g2,tmp)) OPENSSL_ERROR(end);
 
-	BN_clear(tmp);
-	BN_clear(h);
-	BN_CTX_end(bnctx);
+	ctx->rc = ENCOUNTER_OK;
 
-	return ENCOUNTER_OK;
+end:
+	if (tmp)   BN_clear(tmp);
+	if (tmp)   BN_clear(h);
+	if (bnctx) BN_CTX_end(bnctx);
+
+	return ctx->rc;
 }
 
 encounter_err_t encounter_crypto_openssl_numToString(encounter_t  *ctx,\
@@ -879,6 +927,13 @@ encounter_err_t encounter_crypto_openssl_numToString(encounter_t  *ctx,\
 
 				(*key)->k.paillier_pubK.nsquared = \
 				BN_bn2hex(keyctx->k.paillier_pubK.nsquared);
+
+				if (  (*key)->k.paillier_pubK.n 
+				    &&(*key)->k.paillier_pubK.g
+				    &&(*key)->k.paillier_pubK.nsquared)
+					ctx->rc = ENCOUNTER_OK;
+				else	ctx->rc = ENCOUNTER_ERR_CRYPTO;
+
 				break;
 
 			case EC_KEYTYPE_PAILLIER_PRIVATE:
@@ -908,6 +963,18 @@ encounter_err_t encounter_crypto_openssl_numToString(encounter_t  *ctx,\
 
 				(*key)->k.paillier_privK.qInv = \
 				BN_bn2hex(keyctx->k.paillier_privK.qInv);
+				
+				if (  (*key)->k.paillier_privK.p
+				    &&(*key)->k.paillier_privK.q
+				    &&(*key)->k.paillier_privK.psquared
+				    &&(*key)->k.paillier_privK.qsquared
+				    &&(*key)->k.paillier_privK.pinvmod2tow
+				    &&(*key)->k.paillier_privK.qinvmod2tow
+				    &&(*key)->k.paillier_privK.hsubp
+				    &&(*key)->k.paillier_privK.hsubq
+				    &&(*key)->k.paillier_privK.qInv)
+					ctx->rc = ENCOUNTER_OK;
+				else	ctx->rc = ENCOUNTER_ERR_CRYPTO;
 
 				break;
 
@@ -915,7 +982,6 @@ encounter_err_t encounter_crypto_openssl_numToString(encounter_t  *ctx,\
 				assert(NOTREACHED);
 				break;
 		}
-		ctx->rc = ENCOUNTER_OK;
 	} else ctx->rc = ENCOUNTER_ERR_PARAM;
 
 	return ctx->rc;
@@ -944,7 +1010,12 @@ encounter_err_t encounter_crypto_openssl_stringToNum(encounter_t *ctx,\
 				&(*keyctx)->k.paillier_pubK.nsquared, \
 				key->k.paillier_pubK.nsquared);
 
-				ctx->rc = ENCOUNTER_OK;
+				if (  (*keyctx)->k.paillier_pubK.n 
+				    &&(*keyctx)->k.paillier_pubK.g
+				    &&(*keyctx)->k.paillier_pubK.nsquared)
+					ctx->rc = ENCOUNTER_OK;
+				else	ctx->rc = ENCOUNTER_ERR_CRYPTO;
+
 				break;
 
 			case EC_KEYTYPE_PAILLIER_PRIVATE:
@@ -989,7 +1060,17 @@ encounter_err_t encounter_crypto_openssl_stringToNum(encounter_t *ctx,\
 				&(*keyctx)->k.paillier_privK.qInv,
 				key->k.paillier_privK.qInv);
 
-				ctx->rc = ENCOUNTER_OK;
+				if (  (*keyctx)->k.paillier_privK.p
+				    &&(*keyctx)->k.paillier_privK.q
+				    &&(*keyctx)->k.paillier_privK.psquared
+				    &&(*keyctx)->k.paillier_privK.qsquared
+				    &&(*keyctx)->k.paillier_privK.pinvmod2tow
+				    &&(*keyctx)->k.paillier_privK.qinvmod2tow
+				    &&(*keyctx)->k.paillier_privK.hsubp
+				    &&(*keyctx)->k.paillier_privK.hsubq
+				    &&(*keyctx)->k.paillier_privK.qInv)
+					ctx->rc = ENCOUNTER_OK;
+				else	ctx->rc = ENCOUNTER_ERR_CRYPTO;
 				break;
 
 			default:
@@ -1006,8 +1087,9 @@ encounter_err_t encounter_crypto_openssl_counterToString(\
 	encounter_t *ctx, ec_count_t *encount, char **counter) 
 {
 	if (encount && counter) {
-		*counter = BN_bn2hex(encount->c);		
-		ctx->rc = ENCOUNTER_OK;
+		*counter = BN_bn2hex(encount->c);
+		if (counter) 	ctx->rc = ENCOUNTER_OK;
+		else		ctx->rc = ENCOUNTER_ERR_CRYPTO;
 
 	} else ctx->rc = ENCOUNTER_ERR_PARAM;
 
@@ -1074,7 +1156,8 @@ encounter_err_t encounter_crypto_openssl_stringToCounter(\
 	*encount = calloc(1, sizeof **encount);
 	if (*encount) {
 		(*encount)->version = ENCOUNTER_COUNT_PAILLIER_V1;
-		BN_hex2bn(&(*encount)->c, counter);
+		if (!BN_hex2bn(&(*encount)->c, counter))
+			OPENSSL_ERROR(err);
 
 		/* Update the time of last modification */
 		time(&((*encount)->lastUpdated));
