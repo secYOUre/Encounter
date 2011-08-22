@@ -125,6 +125,18 @@ encounter_err_t encounter_touch(encounter_t *ctx, ec_keyctx_t *pubK, \
 	return D.touch(ctx, encount, pubK);
 }
 
+/** Adds two cryptographic counters placing the result in the first one
+  * without first decrypting it. */
+encounter_err_t encounter_add(encounter_t *ctx, ec_keyctx_t *pubK, \
+			ec_count_t *encountA,  ec_count_t *encountB) 
+{
+	__ENCOUNTER_SANITYCHECK_MEM(ctx, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(encountA, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(encountB, ENCOUNTER_ERR_PARAM);
+
+	return D.add(ctx, encountA, encountB, pubK );
+}
+
 /** Decrypt the cryptographic counter, returning the plaintext
   * Accepts the handles of the cryptographic counter and private key */
 encounter_err_t encounter_decrypt(encounter_t *ctx, \

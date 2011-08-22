@@ -18,11 +18,11 @@ struct ec_keyset_s;
 /* These are defined only in encounter.h, and are used for conditional
  * compiles. */
 #define	ENCOUNTER_LIB_VER_MAJOR	0
-#define ENCOUNTER_LIB_VER_MINOR	1
-#define ENCOUNTER_LIB_VER_PATCH	6
+#define ENCOUNTER_LIB_VER_MINOR	2
+#define ENCOUNTER_LIB_VER_PATCH	0
 
 /* xxyyzz, where x=major, y=minor, z=patch */
-#define	ENCOUNTER_LIB_VERSION	"0.1.6"
+#define	ENCOUNTER_LIB_VERSION	"0.2.0"
 
 
 
@@ -272,6 +272,12 @@ ENCOUNTER_RET encounter_inc __P((encounter_t *, ec_keyctx_t *, \
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3) )\
 ENCOUNTER_RET encounter_touch __P((encounter_t *, ec_keyctx_t *, \
 							ec_count_t *));
+
+/** Adds two cryptographic counters placing the result in the first one
+  * without first decrypting it. */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 4) )\
+ENCOUNTER_RET encounter_add __P((encounter_t *, ec_keyctx_t *, \
+					ec_count_t *, ec_count_t *));
 
 /** Decrypt the cryptographic counter, returning the plaintext 
   * Accepts the handles of the cryptographic counter and private key */

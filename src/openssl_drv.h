@@ -74,6 +74,9 @@ encounter_err_t encounter_crypto_openssl_inc(encounter_t *, \
 encounter_err_t encounter_crypto_openssl_touch(encounter_t *, \
 				ec_count_t *, ec_keyctx_t *);
 
+encounter_err_t encounter_crypto_openssl_add(encounter_t *, \
+		ec_count_t *, ec_count_t *, ec_keyctx_t *);
+
 encounter_err_t encounter_crypto_openssl_decrypt(encounter_t *, \
 		ec_count_t *, ec_keyctx_t *, unsigned long long int *);
 
