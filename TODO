@@ -9,3 +9,4 @@
 - [DONE] support extended function and function-parameter checking
 - [DONE] cryptocounters addition operator, encounter_add() - added
 - [DONE] cryptocounters multiplication, encounter_mul() - added
+- [DONE] decrement operator, encounter_dec() - added

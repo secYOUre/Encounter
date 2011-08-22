@@ -160,6 +160,9 @@ start:
 
 	printf("Cryptocounter multiplication x5: succeeded\n");
 #endif
+	if (encounter_dec(ctx, pubK, encounter, 5) != ENCOUNTER_OK) goto end;
+
+	printf("Cryptocounter decrement -5: succeeded\n");
 
 #endif
 	if (encounter_decrypt(ctx, encounter, privK, &c) != ENCOUNTER_OK)

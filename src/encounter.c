@@ -115,6 +115,18 @@ encounter_err_t encounter_inc(encounter_t *ctx, ec_keyctx_t *pubK, \
 	return D.inc(ctx, encount, pubK, a);
 }
 
+/** Decrement the cryptographic counter by the amount in a,
+  * without first decrypting it. */
+encounter_err_t encounter_dec(encounter_t *ctx, ec_keyctx_t *pubK, \
+				ec_count_t *encount,  const int a) 
+{
+	__ENCOUNTER_SANITYCHECK_MEM(ctx, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(encount, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(pubK, ENCOUNTER_ERR_PARAM);
+
+	return D.dec(ctx, encount, pubK, a);
+}
+
 /** Touch the crypto counter by probabilistically re-rencrypting it.
   * The plaintext counter is not affected */
 encounter_err_t encounter_touch(encounter_t *ctx, ec_keyctx_t *pubK, \

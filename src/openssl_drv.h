@@ -69,7 +69,10 @@ encounter_err_t encounter_crypto_openssl_free_counter(encounter_t *, \
 			ec_count_t *);
 
 encounter_err_t encounter_crypto_openssl_inc(encounter_t *, \
-		ec_count_t *, ec_keyctx_t *, const int );
+		ec_count_t *, ec_keyctx_t *, const unsigned int );
+
+encounter_err_t encounter_crypto_openssl_dec(encounter_t *, \
+		ec_count_t *, ec_keyctx_t *, const unsigned int );
 
 encounter_err_t encounter_crypto_openssl_touch(encounter_t *, \
 				ec_count_t *, ec_keyctx_t *);
