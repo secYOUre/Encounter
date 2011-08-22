@@ -7,4 +7,5 @@
 - [DONE] Implement a dispose counter API 
 - [DONE] improve error handling
 - [DONE] support extended function and function-parameter checking
-- [DONE] cryptocounters addition operator, ecounter_add() - added
+- [DONE] cryptocounters addition operator, encounter_add() - added
+- [DONE] cryptocounters multiplication, encounter_mul() - added

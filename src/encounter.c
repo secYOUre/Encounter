@@ -110,6 +110,7 @@ encounter_err_t encounter_inc(encounter_t *ctx, ec_keyctx_t *pubK, \
 {
 	__ENCOUNTER_SANITYCHECK_MEM(ctx, ENCOUNTER_ERR_PARAM);
 	__ENCOUNTER_SANITYCHECK_MEM(encount, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(pubK, ENCOUNTER_ERR_PARAM);
 
 	return D.inc(ctx, encount, pubK, a);
 }
@@ -120,6 +121,7 @@ encounter_err_t encounter_touch(encounter_t *ctx, ec_keyctx_t *pubK, \
 						ec_count_t *encount)
 {
 	__ENCOUNTER_SANITYCHECK_MEM(ctx, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(pubK, ENCOUNTER_ERR_PARAM);
 	__ENCOUNTER_SANITYCHECK_MEM(encount, ENCOUNTER_ERR_PARAM);
 
 	return D.touch(ctx, encount, pubK);
@@ -131,10 +133,23 @@ encounter_err_t encounter_add(encounter_t *ctx, ec_keyctx_t *pubK, \
 			ec_count_t *encountA,  ec_count_t *encountB) 
 {
 	__ENCOUNTER_SANITYCHECK_MEM(ctx, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(pubK, ENCOUNTER_ERR_PARAM);
 	__ENCOUNTER_SANITYCHECK_MEM(encountA, ENCOUNTER_ERR_PARAM);
 	__ENCOUNTER_SANITYCHECK_MEM(encountB, ENCOUNTER_ERR_PARAM);
 
 	return D.add(ctx, encountA, encountB, pubK );
+}
+
+/** Multiply a cryptographic counter by the quantity given in a
+  * without first decrypting it. */
+encounter_err_t encounter_mul(encounter_t *ctx, ec_keyctx_t *pubK, \
+			ec_count_t *encount,  const unsigned int a) 
+{
+	__ENCOUNTER_SANITYCHECK_MEM(ctx, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(pubK, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(encount, ENCOUNTER_ERR_PARAM);
+
+	return D.mul(ctx, encount, pubK, a);
 }
 
 /** Decrypt the cryptographic counter, returning the plaintext
