@@ -106,7 +106,7 @@ encounter_err_t encounter_dispose_counter(encounter_t *ctx, \
 /** Increment the cryptographic counter by the amount in a,
   * without first decrypting it. */
 encounter_err_t encounter_inc(encounter_t *ctx, ec_keyctx_t *pubK, \
-				ec_count_t *encount,  const int a) 
+			ec_count_t *encount,  const unsigned int a) 
 {
 	__ENCOUNTER_SANITYCHECK_MEM(ctx, ENCOUNTER_ERR_PARAM);
 	__ENCOUNTER_SANITYCHECK_MEM(encount, ENCOUNTER_ERR_PARAM);
@@ -118,7 +118,7 @@ encounter_err_t encounter_inc(encounter_t *ctx, ec_keyctx_t *pubK, \
 /** Decrement the cryptographic counter by the amount in a,
   * without first decrypting it. */
 encounter_err_t encounter_dec(encounter_t *ctx, ec_keyctx_t *pubK, \
-				ec_count_t *encount,  const int a) 
+			ec_count_t *encount,  const unsigned int a) 
 {
 	__ENCOUNTER_SANITYCHECK_MEM(ctx, ENCOUNTER_ERR_PARAM);
 	__ENCOUNTER_SANITYCHECK_MEM(encount, ENCOUNTER_ERR_PARAM);

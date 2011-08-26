@@ -19,10 +19,10 @@ struct ec_keyset_s;
  * compiles. */
 #define	ENCOUNTER_LIB_VER_MAJOR	0
 #define ENCOUNTER_LIB_VER_MINOR	2
-#define ENCOUNTER_LIB_VER_PATCH	3
+#define ENCOUNTER_LIB_VER_PATCH	4
 
-/* xxyyzz, where x=major, y=minor, z=patch */
-#define	ENCOUNTER_LIB_VERSION	"0.2.3"
+/* x.y.z, where x=major, y=minor, z=patch */
+#define	ENCOUNTER_LIB_VERSION	"0.2.4"
 
 
 
@@ -265,7 +265,13 @@ ENCOUNTER_RET encounter_dispose_counter __P((encounter_t *, \
   * without first decrypting it. */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3) )\
 ENCOUNTER_RET encounter_inc __P((encounter_t *, ec_keyctx_t *, \
-					ec_count_t *, const int));
+				ec_count_t *, const unsigned int));
+
+/** Decrement the cryptographic counter by the amount in a,
+  * without first decrypting it. */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3) )\
+ENCOUNTER_RET encounter_dec __P((encounter_t *, ec_keyctx_t *, \
+				ec_count_t *, const unsigned int));
 
 /** Touch the crypto counter by probabilistically re-rencrypting it.
   * The plaintext counter is not affected */
