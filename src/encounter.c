@@ -221,6 +221,10 @@ encounter_err_t encounter_add_privateKey(encounter_t *ctx, \
 	__ENCOUNTER_SANITYCHECK_MEM(keyset, ENCOUNTER_ERR_PARAM);
 	__ENCOUNTER_SANITYCHECK_KEYSET_TYPE(keyset->type, ENCOUNTER_ERR_PARAM);
 
+        /* to date, no security mechanism is supported by the current
+         * keystore mechanisms */
+         if (passphrase) return (ENCOUNTER_ERR_IMPL);
+
 	return D.store_key(ctx, privK, keyset->s.path);
 }
 
@@ -245,6 +249,9 @@ encounter_err_t encounter_get_privateKey(encounter_t *ctx, \
 	__ENCOUNTER_SANITYCHECK_MEM(keyset, ENCOUNTER_ERR_PARAM);
 	__ENCOUNTER_SANITYCHECK_KEYSET_TYPE(keyset->type, ENCOUNTER_ERR_PARAM);
 
+        /* to date, no security mechanism is supported by the current
+         * keystore mechanisms */
+         if (passphrase) return (ENCOUNTER_ERR_IMPL);
 	
 	return D.load_privK(ctx, keyset->s.path, passphrase, keyctx);
 }
@@ -280,6 +287,10 @@ encounter_err_t encounter_create_keyset(encounter_t *ctx, \
 	__ENCOUNTER_SANITYCHECK_KEYSET_TYPE(type, ENCOUNTER_ERR_PARAM);
 	__ENCOUNTER_SANITYCHECK_MEM(path, ENCOUNTER_ERR_PARAM);
 	__ENCOUNTER_SANITYCHECK_MEM(keyset, ENCOUNTER_ERR_PARAM);
+
+        /* to date, no security mechanism is supported by the current
+         * keystore mechanisms */
+         if (passphrase) return (ENCOUNTER_ERR_IMPL);
 
 	return D.create_keyset(ctx, type, path, passphrase, keyset);
 }

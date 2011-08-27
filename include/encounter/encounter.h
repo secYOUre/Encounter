@@ -19,10 +19,10 @@ struct ec_keyset_s;
  * compiles. */
 #define	ENCOUNTER_LIB_VER_MAJOR	0
 #define ENCOUNTER_LIB_VER_MINOR	2
-#define ENCOUNTER_LIB_VER_PATCH	5
+#define ENCOUNTER_LIB_VER_PATCH	6
 
 /* x.y.z, where x=major, y=minor, z=patch */
-#define	ENCOUNTER_LIB_VERSION	"0.2.5"
+#define	ENCOUNTER_LIB_VERSION	"0.2.6"
 
 
 
@@ -315,6 +315,8 @@ ENCOUNTER_RET encounter_add_publicKey __P((encounter_t *, \
 					ec_keyctx_t *,  ec_keyset_t *));
 
 /** Add a private key to keyset */
+/* To date, no keyset encryption mechanism is supported by the current
+ * keystore mechanisms. The fourth parameter must be NULL */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3 ) )\
 ENCOUNTER_RET encounter_add_privateKey __P((encounter_t *, \
 			ec_keyctx_t *,  ec_keyset_t *, const char *));
@@ -325,6 +327,8 @@ ENCOUNTER_RET	encounter_get_publicKey __P((encounter_t *, \
 			ec_keyset_t *, ec_keyctx_t **));
 
 /** Get a private key from a keyset */
+/* To date, no keyset encryption mechanism is supported by the current
+ * keystore mechanisms. The third parameter must be NULL */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 4 ) )\
 ENCOUNTER_RET	encounter_get_privateKey __P((encounter_t *, \
 			ec_keyset_t *, const char *, ec_keyctx_t **));
@@ -340,6 +344,8 @@ ENCOUNTER_RET encounter_get_counter __P((encounter_t *, \
 					const char *, ec_count_t **));
 
 /** Create a keyset handle */
+/* To date, no keyset encryption mechanism is supported by the current
+ * keystore mechanisms. The fourth parameter must be NULL */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 3, 5 ) )\
 ENCOUNTER_RET encounter_create_keyset __P((encounter_t *,\
       encounter_keyset_t,  const char *, const char *, ec_keyset_t **));
