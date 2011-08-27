@@ -1,10 +1,11 @@
 # encounter-tests Makefile
 
-BINS=encounter-primer encounter-stressful
+BINS=encounter-primer encounter-stressful encounter-cpptest
 LIBNAME=libencounter
 
 # Fallback to gcc when $CC is not in $PATH
 CC:=$(shell sh -c 'type $(CC) >/dev/null 2>/dev/null && echo $(CC) || echo gcc')
+CPP:=$(shell sh -c 'type $(CPP) >/dev/null 2>/dev/null && echo $(CPP) || echo g++')
 OPTIMIZATION?=-O0
 WARNINGS=-Wall -W -Wstrict-prototypes -Wwrite-strings
 DEBUG?= -g -ggdb
@@ -19,19 +20,26 @@ all: $(BINS)
 # Deps (use make dep to generate this)
 primer.o: ../test/primer.c ../include/encounter/encounter.h
 stressful.o: ../test/stressful.c ../include/encounter/encounter.h
+cpptest.o: ../test/cpptest.cpp ../include/encounter/encounter.h
 
 # Binaries:
+encounter-cpptest: cpptest.o $(STLIBNAME)
+	$(CPP) -o $@ $(REAL_LDFLAGS) $< $(STLIBNAME)
+
 encounter-%: %.o $(STLIBNAME)
 	$(CC) -o $@ $(REAL_LDFLAGS) $< $(STLIBNAME)
 
-test: encounter-primer encounter-stressful
+test: encounter-primer encounter-stressful encounter-cpptest
 	./encounter-primer
 
 .c.o:
 	$(CC) -std=c99 -pedantic -c $(REAL_CFLAGS) $(REAL_LDFLAGS) $<
 
+.cpp.o:
+	$(CC) -std=c99 -pedantic -c $(REAL_CFLAGS) $(REAL_LDFLAGS) $<
+
 clean:
-	rm -rf $(DYLIBNAME) $(STLIBNAME) $(BINS) encounter-primer* encounter-stressful* *.o *.gcda *.gcno *.gcov
+	rm -rf $(DYLIBNAME) $(STLIBNAME) $(BINS) encounter-primer* encounter-stressful* encounter-cpptest* *.o *.gcda *.gcno *.gcov
 
 dep:
 	$(CC) $(CFLAGS) -MM *.c ../test/*.c
