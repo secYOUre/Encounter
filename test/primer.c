@@ -146,20 +146,31 @@ start:
 
 	printf("CounterB increment: succeeded\n");
 
-#if 1
 	/* 19 -> 23 */
 	if (encounter_add(ctx, pubK, encounter, encounterB) \
 			!= ENCOUNTER_OK) goto end;
 	
 	printf("Adding counterB to counterA: succeeded\n");
-#endif
 
-#if 1
+	/* 23 -> 19 */
+	if (encounter_sub(ctx, pubK, encounter, encounterB) \
+			!= ENCOUNTER_OK) goto end;
+	
+	printf("Subtracting counterB to counterA: succeeded\n");
+
+	/* 19-> 23 */
+	if (encounter_add(ctx, pubK, encounter, encounterB) \
+			!= ENCOUNTER_OK) goto end;
+	
+	printf("Adding counterB back to counterA: succeeded\n");
+
+        /* 23 -> 115 */
 	if (encounter_mul(ctx, pubK, encounter, 5) != ENCOUNTER_OK)
 			goto end;
 
 	printf("Cryptocounter multiplication x5: succeeded\n");
-#endif
+
+        /* 115 -> 110 */
 	if (encounter_dec(ctx, pubK, encounter, 5) != ENCOUNTER_OK) goto end;
 
 	printf("Cryptocounter decrement -5: succeeded\n");
@@ -204,9 +215,9 @@ start:
 	printf("New counter: succeded\n");
 #endif
 
-	a++;
 
 end:
+	a++;
 	if (ctx) rc = encounter_error(ctx);
 	if (keyset) encounter_dispose_keyset(ctx, keyset);
 	if (keyset2) encounter_dispose_keyset(ctx, keyset2);

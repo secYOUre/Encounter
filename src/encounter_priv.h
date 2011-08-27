@@ -124,6 +124,10 @@ static struct
 	     ec_count_t *encountA, ec_count_t *encountB, \
 				   ec_keyctx_t *keyctx);
 
+	encounter_err_t (*sub)      (encounter_t *ctx, \
+	     ec_count_t *encountA, ec_count_t *encountB, \
+				   ec_keyctx_t *keyctx);
+
 	encounter_err_t (*mul)        (encounter_t *ctx, \
 	  ec_count_t *encount, ec_keyctx_t *keyctx, const unsigned int);
 
@@ -195,6 +199,7 @@ static struct
 	encounter_crypto_openssl_dec,
 	encounter_crypto_openssl_touch,
 	encounter_crypto_openssl_add,
+	encounter_crypto_openssl_sub,
 	encounter_crypto_openssl_mul,
 	encounter_crypto_openssl_decrypt,
 	encounter_crypto_openssl_free_keyctx,

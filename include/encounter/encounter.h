@@ -19,10 +19,10 @@ struct ec_keyset_s;
  * compiles. */
 #define	ENCOUNTER_LIB_VER_MAJOR	0
 #define ENCOUNTER_LIB_VER_MINOR	2
-#define ENCOUNTER_LIB_VER_PATCH	4
+#define ENCOUNTER_LIB_VER_PATCH	5
 
 /* x.y.z, where x=major, y=minor, z=patch */
-#define	ENCOUNTER_LIB_VERSION	"0.2.4"
+#define	ENCOUNTER_LIB_VERSION	"0.2.5"
 
 
 
@@ -280,12 +280,18 @@ ENCOUNTER_RET encounter_touch __P((encounter_t *, ec_keyctx_t *, \
 							ec_count_t *));
 
 /** Adds two cryptographic counters placing the result in the first one
-  * without first decrypting it. */
+  * without first decrypting them. */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 4) )\
 ENCOUNTER_RET encounter_add __P((encounter_t *, ec_keyctx_t *, \
 					ec_count_t *, ec_count_t *));
 
-/** Multiply a cryptographic counters by a given amount
+/** Subtracts two cryptographic counters placing the result in the first one
+  * without first decrypting them. */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 4) )\
+ENCOUNTER_RET encounter_sub __P((encounter_t *, ec_keyctx_t *, \
+					ec_count_t *, ec_count_t *));
+
+/** Multiply a cryptographic counters by a given quantity
   * without first decrypting it. */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3 ) )\
 ENCOUNTER_RET encounter_mul __P((encounter_t *, ec_keyctx_t *, \

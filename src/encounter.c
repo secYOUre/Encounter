@@ -140,7 +140,7 @@ encounter_err_t encounter_touch(encounter_t *ctx, ec_keyctx_t *pubK, \
 }
 
 /** Adds two cryptographic counters placing the result in the first one
-  * without first decrypting it. */
+  * without first decrypting them. */
 encounter_err_t encounter_add(encounter_t *ctx, ec_keyctx_t *pubK, \
 			ec_count_t *encountA,  ec_count_t *encountB) 
 {
@@ -150,6 +150,19 @@ encounter_err_t encounter_add(encounter_t *ctx, ec_keyctx_t *pubK, \
 	__ENCOUNTER_SANITYCHECK_MEM(encountB, ENCOUNTER_ERR_PARAM);
 
 	return D.add(ctx, encountA, encountB, pubK );
+}
+
+/** Subtracts two cryptographic counters placing the result in the first one
+  * without first decrypting them. */
+encounter_err_t encounter_sub(encounter_t *ctx, ec_keyctx_t *pubK, \
+			ec_count_t *encountA,  ec_count_t *encountB) 
+{
+	__ENCOUNTER_SANITYCHECK_MEM(ctx, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(pubK, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(encountA, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(encountB, ENCOUNTER_ERR_PARAM);
+
+	return D.sub(ctx, encountA, encountB, pubK );
 }
 
 /** Multiply a cryptographic counter by the quantity given in a

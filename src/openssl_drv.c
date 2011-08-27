@@ -4,19 +4,14 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
+
 #include <openssl/rand.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/opensslv.h>
 #include <openssl/ripemd.h>
 #include <openssl/bio.h>
-#include <openssl/x509.h>
-#include <openssl/x509v3.h>
-#include <openssl/x509_vfy.h>
-#include <openssl/engine.h>
-#include <openssl/pem.h>
 #include <openssl/crypto.h>
-#include <openssl/pkcs12.h>
 
 #include "encounter_priv.h"
 
@@ -64,8 +59,9 @@ static encounter_err_t encounter_crypto_openssl_paillierUpdate(\
 	encounter_t *, BIGNUM *, const ec_keyctx_t *, BN_CTX *, \
 	const unsigned int, bool );
 
-static encounter_err_t encounter_crypto_openssl_paillierAdd(\
-    encounter_t *, BIGNUM *, BIGNUM *, const ec_keyctx_t *, BN_CTX *);
+static encounter_err_t encounter_crypto_openssl_paillierAddSub(\
+    encounter_t *, BIGNUM *, BIGNUM *, const ec_keyctx_t *, \
+                                        BN_CTX *, const bool);
 
 static encounter_err_t encounter_crypto_openssl_paillierMul(\
 	encounter_t *, BIGNUM *, const ec_keyctx_t *, BN_CTX *, \
@@ -441,15 +437,15 @@ static encounter_err_t encounter_crypto_openssl_new_paillierGenerator(\
 
 end:
 
-	if (tmp) BN_clear(tmp);
-	if (inv) BN_clear(inv);
+	if (tmp)   BN_clear(tmp);
+	if (inv)   BN_clear(inv);
 	if (pmin1) BN_clear(pmin1);
 	if (qmin1) BN_clear(qmin1);
 	if (gsubp) BN_clear(gsubp);
 	if (gsubq) BN_clear(gsubq);
 
-	BN_CTX_end(bnctx);
-	BN_CTX_free(bnctx);
+	if (bnctx) BN_CTX_end(bnctx);
+	if (bnctx) BN_CTX_free(bnctx);
 
 	return ctx->rc;
 }
@@ -483,7 +479,7 @@ static encounter_err_t encounter_crypto_openssl_invMod2toW(\
 
 end:
 	if (twotow) BN_clear(twotow);
-	BN_CTX_end(bnctx);
+	if (bnctx)  BN_CTX_end(bnctx);
 
 	return ctx->rc;
 }
@@ -513,9 +509,9 @@ static encounter_err_t encounter_crypto_openssl_hConstant (\
 	ctx->rc = ENCOUNTER_OK;
 
 end:
-	if (tmp) BN_clear(tmp);
+	if (tmp)   BN_clear(tmp);
 	if (pmin1) BN_clear(pmin1);
-	BN_CTX_end(bnctx);
+	if (bnctx) BN_CTX_end(bnctx);
 
 	return ctx->rc;
 }
@@ -537,8 +533,8 @@ static encounter_err_t encounter_crypto_openssl_fastL(encounter_t *ctx, BIGNUM *
 	ctx->rc = ENCOUNTER_OK;
 
 end:
-	if (tmp) BN_clear(tmp);
-	BN_CTX_end(bnctx);
+	if (tmp)   BN_clear(tmp);
+	if (bnctx) BN_CTX_end(bnctx);
 
 	return ctx->rc;
 }
@@ -615,10 +611,10 @@ static encounter_err_t encounter_crypto_openssl_paillierEncrypt(\
 	ctx->rc = ENCOUNTER_OK;
 
 end:
-	if (tmp)  BN_clear(tmp); 
-	if (tmp2) BN_clear(tmp2); 
-	if (r)    BN_clear(r);
-	BN_CTX_end(bnctx);
+	if (tmp)   BN_clear(tmp); 
+	if (tmp2)  BN_clear(tmp2); 
+	if (r)     BN_clear(r);
+	if (bnctx) BN_CTX_end(bnctx);
 	if (bnctx) BN_CTX_free(bnctx);
 
 	return ctx->rc;
@@ -645,8 +641,8 @@ static encounter_err_t IsInZnstar(encounter_t *ctx, const BIGNUM *a,\
 
 
 end:
-	if (tmp) BN_clear(tmp);
-	BN_CTX_end(bnctx);
+	if (tmp)   BN_clear(tmp);
+	if (bnctx) BN_CTX_end(bnctx);
 
 	return ctx->rc;
 }
@@ -901,10 +897,9 @@ encounter_err_t encounter_crypto_openssl_touch(encounter_t *ctx, \
 	ctx->rc = ENCOUNTER_OK;
 
 end:
-	if (tmp) BN_clear(tmp);
-	if (r)	BN_clear(r);
-
-	BN_CTX_end(bnctx);
+	if (tmp)   BN_clear(tmp);
+	if (r)	   BN_clear(r);
+	if (bnctx) BN_CTX_end(bnctx);
 	if (bnctx) BN_CTX_free(bnctx);
 
 	return ctx->rc;
@@ -915,8 +910,9 @@ encounter_err_t encounter_crypto_openssl_add(encounter_t *ctx, \
 {
 	BN_CTX *bnctx = BN_CTX_new();
 
-	if (encounter_crypto_openssl_paillierAdd(ctx, \
-		encountA->c, encountB->c, pubK, bnctx) != ENCOUNTER_OK)
+	if (encounter_crypto_openssl_paillierAddSub(ctx, \
+             encountA->c, encountB->c, pubK, bnctx, false) \
+             != ENCOUNTER_OK)
 		OPENSSL_ERROR(end);
 			
 	ctx->rc = ENCOUNTER_OK;
@@ -925,20 +921,39 @@ end:
 	/* Update the time of last modification */
 	time(&(encountA->lastUpdated));
 
-	BN_CTX_free(bnctx);
+	if (bnctx) BN_CTX_free(bnctx);
 	return ctx->rc;
-
-
 }
 
-static encounter_err_t encounter_crypto_openssl_paillierAdd(  \
+encounter_err_t encounter_crypto_openssl_sub(encounter_t *ctx, \
+       ec_count_t *encountA, ec_count_t *encountB, ec_keyctx_t *pubK)
+{
+	BN_CTX *bnctx = BN_CTX_new();
+
+	if (encounter_crypto_openssl_paillierAddSub(ctx, \
+             encountA->c, encountB->c, pubK, bnctx, true) \
+             != ENCOUNTER_OK)
+		OPENSSL_ERROR(end);
+			
+	ctx->rc = ENCOUNTER_OK;
+
+end:
+	/* Update the time of last modification */
+	time(&(encountA->lastUpdated));
+
+	if (bnctx) BN_CTX_free(bnctx);
+	return ctx->rc;
+}
+
+static encounter_err_t encounter_crypto_openssl_paillierAddSub(  \
     		encounter_t *ctx, BIGNUM *c, BIGNUM *b, \
-			const ec_keyctx_t *pubK, BN_CTX *bnctx)
+	const ec_keyctx_t *pubK, BN_CTX *bnctx, const bool subtract)
 {
 	if (!ctx || !c || !b || !pubK || !bnctx) goto end;
 
 	BN_CTX_start(bnctx);
 	BIGNUM *tmp = BN_CTX_get(bnctx);
+	BIGNUM *tmp2 = BN_CTX_get(bnctx);
 	BIGNUM *r = BN_CTX_get(bnctx);
 	bool in = false;
 
@@ -950,7 +965,16 @@ static encounter_err_t encounter_crypto_openssl_paillierAdd(  \
 	fprintf(stdout, "\n");
 #endif
 
-	if (!BN_mod_mul(c, c, b, \
+        if (subtract) {
+		if (!BN_mod_inverse(tmp2, b, \
+			pubK->k.paillier_pubK.nsquared, bnctx) )
+			OPENSSL_ERROR(end);
+        } else {
+                if (!BN_copy(tmp2, b))
+                        OPENSSL_ERROR(end);
+        }
+
+	if (!BN_mod_mul(c, c, tmp2, \
 			pubK->k.paillier_pubK.nsquared, bnctx) )  
 		OPENSSL_ERROR(end);
 	
@@ -977,9 +1001,10 @@ static encounter_err_t encounter_crypto_openssl_paillierAdd(  \
 	ctx->rc = ENCOUNTER_OK;
 
 end:
-	if (tmp) BN_clear(tmp); 
-	if (r)   BN_clear(r);
-	BN_CTX_end(bnctx);
+	if (tmp)   BN_clear(tmp); 
+	if (tmp2)  BN_clear(tmp); 
+	if (r)     BN_clear(r);
+	if (bnctx) BN_CTX_end(bnctx);
 
 	return ctx->rc;
 

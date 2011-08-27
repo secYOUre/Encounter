@@ -80,6 +80,9 @@ encounter_err_t encounter_crypto_openssl_touch(encounter_t *, \
 encounter_err_t encounter_crypto_openssl_add(encounter_t *, \
 		ec_count_t *, ec_count_t *, ec_keyctx_t *);
 
+encounter_err_t encounter_crypto_openssl_sub(encounter_t *, \
+		ec_count_t *, ec_count_t *, ec_keyctx_t *);
+
 encounter_err_t encounter_crypto_openssl_mul(encounter_t *, \
 		ec_count_t *, ec_keyctx_t *, const unsigned int);
 

@@ -10,3 +10,4 @@
 - [DONE] cryptocounters addition operator, encounter_add() - added
 - [DONE] cryptocounters multiplication, encounter_mul() - added
 - [DONE] decrement operator, encounter_dec() - added
+- [DONE] cryptocounters subtraction operator, encounter_sub() - added
