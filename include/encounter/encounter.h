@@ -297,6 +297,16 @@ EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3 ) )\
 ENCOUNTER_RET encounter_mul __P((encounter_t *, ec_keyctx_t *, \
 				ec_count_t *, const unsigned int));
 
+/** Creates a new ec_count_t containing the value 'from' */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 4 ) )\
+ENCOUNTER_RET encounter_dup __P((encounter_t *, ec_keyctx_t *, \
+                                        ec_count_t *, ec_count_t **));
+
+/** Copies the 'from' counter to 'to'. */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 4 ) )\
+ENCOUNTER_RET encounter_copy __P((encounter_t *, ec_keyctx_t *, \
+                                        ec_count_t *, ec_count_t *));
+
 /** Decrypt the cryptographic counter, returning the plaintext 
   * Accepts the handles of the cryptographic counter and private key */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 4) )\

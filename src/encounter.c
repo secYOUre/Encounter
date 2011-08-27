@@ -177,6 +177,31 @@ encounter_err_t encounter_mul(encounter_t *ctx, ec_keyctx_t *pubK, \
 	return D.mul(ctx, encount, pubK, a);
 }
 
+/** Creates a new ec_count_t containing the value 'from' */
+encounter_err_t encounter_dup(encounter_t *ctx, ec_keyctx_t *pubK, \
+                                ec_count_t *from, ec_count_t **to)
+{
+	__ENCOUNTER_SANITYCHECK_MEM(ctx, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(pubK, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(from, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(to, ENCOUNTER_ERR_PARAM);
+
+        return D.dup(ctx, pubK, from, to);
+}
+
+/** Copies the 'from' counter to 'to'. */
+encounter_err_t encounter_copy(encounter_t *ctx, ec_keyctx_t *pubK, \
+                                 ec_count_t *from, ec_count_t *to)
+{
+	__ENCOUNTER_SANITYCHECK_MEM(ctx, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(pubK, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(from, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(to, ENCOUNTER_ERR_PARAM);
+
+        return D.copy(ctx, pubK, from, to);
+}
+
+
 /** Decrypt the cryptographic counter, returning the plaintext
   * Accepts the handles of the cryptographic counter and private key */
 encounter_err_t encounter_decrypt(encounter_t *ctx, \

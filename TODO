@@ -11,3 +11,4 @@
 - [DONE] cryptocounters multiplication, encounter_mul() - added
 - [DONE] decrement operator, encounter_dec() - added
 - [DONE] cryptocounters subtraction operator, encounter_sub() - added
+- [DONE] cryptocounters dup and copy: added, encounter_dup() + encounter_copy()

@@ -19,6 +19,8 @@ int main(int argc, char *argv[])
 	ec_keyctx_t *privK = NULL;
 	ec_count_t  *encounter = NULL;
 	ec_count_t  *encounterB = NULL;
+        ec_count_t  *counter_dup = NULL;
+        ec_count_t  *counter_copy = NULL;
 	ec_keyset_t *keyset = NULL, *keyset2 = NULL;
 	unsigned long long int c = 0;
 	int a = 0;
@@ -194,27 +196,32 @@ start:
 	printf("Plaintext counter: %lld\n", c);
 #endif
 
-#if 0
-	encounter_dispose_counter(ctx, encounter); encounter = NULL;
-	encounter_dispose_keyctx(ctx, pubK);   pubK = NULL;
-	encounter_dispose_keyctx(ctx, privK); privK = NULL;
+        if (encounter_dup(ctx, pubK, encounter, &counter_dup) \
+                != ENCOUNTER_OK) goto end;
 
-	if(encounter_keygen(ctx, EC_KEYTYPE_PAILLIER_PUBLIC, \
-			KEYSIZE, &pubK, &privK) != ENCOUNTER_OK) goto end;
+        printf("Cryptocounter duplication: succeeded\n");
 
-	printf("Keygen: succeeded\n");
+	if (encounter_decrypt(ctx, counter_dup, privK, &c) \
+                != ENCOUNTER_OK) goto end;
 
-	if(encounter_new_counter(ctx, pubK, &encounter) != ENCOUNTER_OK)
-					goto end;
+	printf("Duplicated Cryptocounter decryption: succeeded\n");
+	printf("Plaintext counter: %lld\n", c);
 
-	printf("New counter: succeded\n");
+	if(encounter_new_counter(ctx, pubK, &counter_copy) \
+                != ENCOUNTER_OK) goto end;
 
-	if(encounter_new_counter(ctx, pubK, &encounter) != ENCOUNTER_OK)
-					goto end;
+	printf("New counter_copy: succeded\n");
 
-	printf("New counter: succeded\n");
-#endif
+        if (encounter_copy(ctx, pubK, encounter, counter_copy) \
+                != ENCOUNTER_OK) goto end;
 
+        printf("Cryptocounter copy: succeeded\n");
+
+	if (encounter_decrypt(ctx, counter_copy, privK, &c) \
+                != ENCOUNTER_OK) goto end;
+
+	printf("Cryptocounter copy decryption: succeeded\n");
+	printf("Plaintext counter: %lld\n", c);
 
 end:
 	a++;
@@ -223,6 +230,8 @@ end:
 	if (keyset2) encounter_dispose_keyset(ctx, keyset2);
 	if (encounter) encounter_dispose_counter(ctx, encounter);
 	if (encounterB) encounter_dispose_counter(ctx, encounterB);
+	if (counter_dup) encounter_dispose_counter(ctx, counter_dup);
+	if (counter_copy) encounter_dispose_counter(ctx, counter_copy);
 	if (pubK) encounter_dispose_keyctx(ctx, pubK);
 	if (privK) encounter_dispose_keyctx(ctx, privK);
 	if (ctx) encounter_term(ctx);

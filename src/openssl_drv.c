@@ -550,10 +550,13 @@ encounter_err_t encounter_crypto_openssl_new_counter(encounter_t *ctx, ec_keyctx
 
 			encounter_crypto_openssl_paillierEncrypt(\
 				ctx, (*counter)->c, ctx->m, pubK);
-
-			/* Update the time of last modification */
-			time(&((*counter)->lastUpdated));
-			ctx->rc = ENCOUNTER_OK;
+                        if (ctx->rc == ENCOUNTER_OK) {
+			        /* Update the time of last modification */
+			        time(&((*counter)->lastUpdated));
+                        } else {
+                                free(*counter);
+                                *counter = NULL;
+                        }
 		} else
 			ctx->rc = ENCOUNTER_ERR_MEM;
 		
@@ -729,6 +732,64 @@ end:
 
 	if (bnctx) BN_CTX_free(bnctx);
 	return ctx->rc;
+}
+
+encounter_err_t encounter_crypto_openssl_dup(encounter_t *ctx, \
+                ec_keyctx_t *pubK, ec_count_t *from, ec_count_t **to)
+{
+	if (from && to) {
+		*to = calloc(1, sizeof **to);
+		if (*to) {
+			(*to)->version = from->version;
+			(*to)->c = BN_dup(from->c);
+                        if ((*to)->c == NULL) {
+                                encounter_set_error(ctx, \
+                                   ENCOUNTER_ERR_MEM, "openssl: %s",\
+                                   ERR_error_string(ERR_get_error(),\
+                                   NULL));
+                                free(*to);
+                                *to = NULL;
+                                return ctx->rc;
+                        }
+
+                        encounter_crypto_openssl_touch(ctx, *to, pubK);
+                        if (ctx->rc == ENCOUNTER_OK) {
+			        /* Update the time of last modification */
+			        time(&((*to)->lastUpdated));
+                        } else {
+                                free(*to);
+                                *to = NULL;
+                        }
+		} else
+			ctx->rc = ENCOUNTER_ERR_MEM;
+		
+		return ctx->rc;
+	}
+
+	ctx->rc = ENCOUNTER_ERR_PARAM;
+	return ctx->rc;
+}
+
+encounter_err_t encounter_crypto_openssl_copy(encounter_t *ctx, \
+                ec_keyctx_t *pubK, ec_count_t *from, ec_count_t *to)
+{
+        if (from && to) {
+                to->version = from->version;
+                if (!BN_copy(to->c, from->c)) {
+                        encounter_set_error(ctx, ENCOUNTER_ERR_MEM, \
+                                "openssl: %s", ERR_error_string( \
+                                ERR_get_error(), NULL));
+                        return ctx->rc;
+                }
+
+
+                /* we are returning the return code from touch() */
+                encounter_crypto_openssl_touch(ctx, to, pubK);
+                time(&(to->lastUpdated));
+
+        } else  ctx->rc = ENCOUNTER_ERR_PARAM;
+
+        return ctx->rc;
 }
 
 static encounter_err_t encounter_crypto_openssl_paillierUpdate(\

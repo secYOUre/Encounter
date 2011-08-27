@@ -86,6 +86,12 @@ encounter_err_t encounter_crypto_openssl_sub(encounter_t *, \
 encounter_err_t encounter_crypto_openssl_mul(encounter_t *, \
 		ec_count_t *, ec_keyctx_t *, const unsigned int);
 
+encounter_err_t encounter_crypto_openssl_dup(encounter_t *, \
+		ec_keyctx_t *, ec_count_t *, ec_count_t **);
+
+encounter_err_t encounter_crypto_openssl_copy(encounter_t *, \
+		ec_keyctx_t *, ec_count_t *, ec_count_t *);
+
 encounter_err_t encounter_crypto_openssl_decrypt(encounter_t *, \
 		ec_count_t *, ec_keyctx_t *, unsigned long long int *);
 
