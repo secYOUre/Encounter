@@ -1,6 +1,6 @@
 # encounter-tests Makefile
 
-BINS=encounter-primer encounter-stressful encounter-cpptest
+BINS=encounter-primer encounter-stressful encounter-cpptest encounter-multest encounter-subtest
 LIBNAME=libencounter
 
 # Fallback to gcc when $CC is not in $PATH
@@ -19,6 +19,8 @@ all: $(BINS)
 
 # Deps (use make dep to generate this)
 primer.o: ../test/primer.c ../include/encounter/encounter.h
+multest.o: ../test/multest.c ../include/encounter/encounter.h
+subtest.o: ../test/subtest.c ../include/encounter/encounter.h
 stressful.o: ../test/stressful.c ../include/encounter/encounter.h
 cpptest.o: ../test/cpptest.cpp ../include/encounter/encounter.h
 
@@ -29,7 +31,7 @@ encounter-cpptest: cpptest.o $(STLIBNAME)
 encounter-%: %.o $(STLIBNAME)
 	$(CC) -o $@ $(REAL_LDFLAGS) $< $(STLIBNAME)
 
-test: encounter-primer encounter-stressful encounter-cpptest
+test: encounter-primer encounter-stressful encounter-cpptest encounter-multest encounter-subtest
 	./encounter-primer
 
 .c.o:
@@ -39,7 +41,7 @@ test: encounter-primer encounter-stressful encounter-cpptest
 	$(CC) -std=c99 -pedantic -c $(REAL_CFLAGS) $(REAL_LDFLAGS) $<
 
 clean:
-	rm -rf $(DYLIBNAME) $(STLIBNAME) $(BINS) encounter-primer* encounter-stressful* encounter-cpptest* *.o *.gcda *.gcno *.gcov
+	rm -rf $(DYLIBNAME) $(STLIBNAME) $(BINS) encounter-primer* encounter-stressful* encounter-cpptest* encounter-multest* *.o *.gcda *.gcno *.gcov
 
 dep:
 	$(CC) $(CFLAGS) -MM *.c ../test/*.c

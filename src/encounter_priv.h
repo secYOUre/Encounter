@@ -131,11 +131,22 @@ static struct
 	encounter_err_t (*mul)        (encounter_t *ctx, \
 	  ec_count_t *encount, ec_keyctx_t *keyctx, const unsigned int);
 
+	encounter_err_t (*mul_rand)        (encounter_t *ctx, \
+	                      ec_count_t *encount, ec_keyctx_t *keyctx);
+
 	encounter_err_t (*dup)        (encounter_t *ctx, \
 	         ec_keyctx_t *pubK, ec_count_t *encount, ec_count_t **);
 
 	encounter_err_t (*copy)        (encounter_t *ctx, \
 	         ec_keyctx_t *pubK, ec_count_t *encount, ec_count_t *);
+
+	encounter_err_t (*cmp)        (encounter_t *ctx, \
+	                        ec_count_t *encount, ec_count_t *, \
+                                ec_keyctx_t *, ec_keyctx_t *, int *);
+
+	encounter_err_t (*private_cmp)        (encounter_t *ctx, \
+	                        ec_count_t *encount, ec_count_t *, \
+                                ec_keyctx_t *, ec_keyctx_t *, int *);
 
 	encounter_err_t	(*decrypt)    (encounter_t *ctx, \
 	     ec_count_t *encount, ec_keyctx_t *keyctx, unsigned int *c);
@@ -207,8 +218,11 @@ static struct
 	encounter_crypto_openssl_add,
 	encounter_crypto_openssl_sub,
 	encounter_crypto_openssl_mul,
+	encounter_crypto_openssl_mul_rand,
 	encounter_crypto_openssl_dup,
 	encounter_crypto_openssl_copy,
+	encounter_crypto_openssl_cmp,
+	encounter_crypto_openssl_private_cmp2,
 	encounter_crypto_openssl_decrypt,
 	encounter_crypto_openssl_free_keyctx,
 	encounter_crypto_openssl_dispose_keystring,

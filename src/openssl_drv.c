@@ -65,7 +65,7 @@ static encounter_err_t encounter_crypto_openssl_paillierAddSub(\
 
 static encounter_err_t encounter_crypto_openssl_paillierMul(\
 	encounter_t *, BIGNUM *, const ec_keyctx_t *, BN_CTX *, \
-	const unsigned int);
+	const unsigned int, bool);
 
 static encounter_err_t encounter_crypto_openssl_fastCRT(\
 	encounter_t *, BIGNUM *g, const BIGNUM *g1, const BIGNUM *p, \
@@ -131,9 +131,11 @@ encounter_err_t encounter_crypto_openssl_init(encounter_t *ctx)
 	/* Set ctx->m to zero. This precomputed quantity will be used
 	 * to initialize each crypto counter instance */
 	ctx->m = BN_new();
-	BN_zero(ctx->m);
+        if (!BN_zero(ctx->m)) OPENSSL_ERROR(end);
 
 	ctx->rc = ENCOUNTER_OK;
+
+end:
 	return ctx->rc;
 }
 
@@ -516,9 +518,9 @@ end:
 	return ctx->rc;
 }
 
-static encounter_err_t encounter_crypto_openssl_fastL(encounter_t *ctx, BIGNUM *y, \
-	const BIGNUM *u, const BIGNUM *n, const BIGNUM *ninvmod2tow,\
-							BN_CTX *bnctx)
+static encounter_err_t encounter_crypto_openssl_fastL(encounter_t *ctx,\
+                          BIGNUM *y, const BIGNUM *u, const BIGNUM *n, \
+                               const BIGNUM *ninvmod2tow, BN_CTX *bnctx)
 {
 	BN_CTX_start(bnctx);
 	BIGNUM *tmp = BN_CTX_get(bnctx);
@@ -526,9 +528,11 @@ static encounter_err_t encounter_crypto_openssl_fastL(encounter_t *ctx, BIGNUM *
 	if (!BN_sub(tmp,u,BN_value_one()) ) OPENSSL_ERROR(end);
 
 	int w = BN_num_bits(n);
-	if (!BN_mask_bits(tmp,w) ) OPENSSL_ERROR(end);
+	// if (!BN_mask_bits(tmp,w) ) OPENSSL_ERROR(end); 
+	BN_mask_bits(tmp,w);
 	if (! BN_mul(y,tmp,ninvmod2tow,bnctx) ) OPENSSL_ERROR(end);
-	if (!BN_mask_bits(y,w) ) OPENSSL_ERROR(end);
+        // if (!BN_mask_bits(y,w) ) OPENSSL_ERROR(end); 
+	BN_mask_bits(y,w);
 
 	ctx->rc = ENCOUNTER_OK;
 
@@ -721,7 +725,26 @@ encounter_err_t encounter_crypto_openssl_mul(encounter_t *ctx, \
 	BN_CTX *bnctx = BN_CTX_new();
 
 	if (encounter_crypto_openssl_paillierMul(ctx, \
-			counter->c, pubK, bnctx, a) != ENCOUNTER_OK)
+		counter->c, pubK, bnctx, a, false) != ENCOUNTER_OK)
+		OPENSSL_ERROR(end);
+			
+	ctx->rc = ENCOUNTER_OK;
+
+end:
+	/* Update the time of last modification */
+	time(&(counter->lastUpdated));
+
+	if (bnctx) BN_CTX_free(bnctx);
+	return ctx->rc;
+}
+
+encounter_err_t encounter_crypto_openssl_mul_rand(encounter_t *ctx, \
+                                ec_count_t *counter, ec_keyctx_t *pubK)
+{
+	BN_CTX *bnctx = BN_CTX_new();
+
+	if (encounter_crypto_openssl_paillierMul(ctx, \
+		counter->c, pubK, bnctx, 0, true) != ENCOUNTER_OK)
 		OPENSSL_ERROR(end);
 			
 	ctx->rc = ENCOUNTER_OK;
@@ -789,6 +812,254 @@ encounter_err_t encounter_crypto_openssl_copy(encounter_t *ctx, \
 
         } else  ctx->rc = ENCOUNTER_ERR_PARAM;
 
+        return ctx->rc;
+}
+
+/* encounter_cmp() naive (and straightforward) implementation */
+encounter_err_t encounter_crypto_openssl_cmp(encounter_t *ctx, \
+                ec_count_t *a, ec_count_t *b, ec_keyctx_t *privKA,\
+                                  ec_keyctx_t *privKB, int *result)
+{
+        unsigned long long int pa, pb;
+        ec_keyctx_t *ka, *kb;
+
+        if (!ctx || !a || !b || !result) 
+                return ENCOUNTER_ERR_PARAM;
+
+        /* At least one private key must be supplied */
+        if (!privKA && !privKB) goto end;
+
+        /* Decrypt each counter with the respective private-key,
+         * if available. Otherwise, use the only supplied key to
+         * decrypt both */
+        ka = (privKA ? privKA : privKB);
+        kb = (privKB ? privKB : privKA);
+
+        if (encounter_crypto_openssl_decrypt(ctx, a, ka, &pa)
+                != ENCOUNTER_OK) OPENSSL_ERROR(end);
+        if (encounter_crypto_openssl_decrypt(ctx, b, kb, &pb)
+                != ENCOUNTER_OK) OPENSSL_ERROR(end);
+
+             if (pa  < pb) *result = -1;
+        else if (pa == pb) *result =  0;
+        else               *result =  1;
+
+        ctx->rc = ENCOUNTER_OK;
+end:
+        pa = 0; pb = 0;
+
+        return ctx->rc;
+}
+
+/** encounter_private_cmp()
+ * Compares the supplied counters encrypted under a common public-key
+ * without ever decrypting the same counters. encounter_private_cmp()
+ * can use the supplied private-key to decrypt a quantity derived from
+ * the cryptographic counters and hard to reverse-engineer.
+ * The result is -1 if a < b, 0 if a == b and 1 if a > b */
+encounter_err_t encounter_crypto_openssl_private_cmp(encounter_t *ctx, \
+                                 ec_count_t *a, ec_count_t *b, \
+                      ec_keyctx_t *pubK,ec_keyctx_t *privK, int *result)
+{
+        if (!ctx) return ENCOUNTER_ERR_PARAM;
+        if (!a || !b || !pubK || !privK || !result) goto end;
+
+        unsigned long long int c;
+        encounter_err_t rc;
+        ec_count_t *diffAB = NULL, *diffBA = NULL;
+
+        if (encounter_crypto_openssl_dup(ctx, pubK, a, &diffAB) \
+                != ENCOUNTER_OK) OPENSSL_ERROR(end);
+        if (encounter_crypto_openssl_dup(ctx, pubK, b, &diffBA) \
+                != ENCOUNTER_OK) OPENSSL_ERROR(end);
+
+        if (encounter_crypto_openssl_sub(ctx, diffAB, b, pubK)
+                != ENCOUNTER_OK) OPENSSL_ERROR(end);
+        if (encounter_crypto_openssl_sub(ctx, diffBA, a, pubK)
+                != ENCOUNTER_OK) OPENSSL_ERROR(end);
+
+        /* Multiply A-B by a cryptographically strong random positive 
+         * number and check if the result is positive */
+        if (encounter_crypto_openssl_mul_rand(ctx, diffAB, pubK) \
+                        != ENCOUNTER_OK) OPENSSL_ERROR(end);
+        rc = encounter_crypto_openssl_decrypt(ctx, diffAB, privK, &c);
+        switch (rc) {
+                case ENCOUNTER_OK:
+                        if (c > 0) 
+                                *result = 1;
+                        else
+                                *result = 0; /* A is equal to B */
+                        break;
+
+                case ENCOUNTER_ERR_OVERFLOW:
+                        /*Check if B-A multiplied by a cryptographically
+                         * strong positive random number is positive */
+                        if (encounter_crypto_openssl_mul_rand(ctx, \
+                                diffBA, pubK) != ENCOUNTER_OK)
+                                OPENSSL_ERROR(end); 
+                        if (encounter_crypto_openssl_decrypt(ctx, \
+                                diffBA, privK, &c) != ENCOUNTER_OK)
+                                OPENSSL_ERROR(end);
+                        if (c > 0)
+                                *result = -1;
+                        else
+                                *result = 0; /* A is equal to B */
+                        break;
+                default:
+                        goto end;
+                        break;
+        }
+
+
+        ctx->rc = ENCOUNTER_OK;
+end:
+        if (diffAB) encounter_crypto_openssl_free_counter(ctx, diffAB);
+        if (diffBA) encounter_crypto_openssl_free_counter(ctx, diffBA);
+        c = 0;
+        return ctx->rc;
+}
+
+
+/** encounter_private_cmp2()
+ * Compares the supplied counters encrypted under a common public-key
+ * without ever decrypting the same counters. encounter_private_cmp2()
+ * can use the supplied private-key to decrypt a quantity derived from
+ * the cryptographic counters and hard to reverse-engineer.
+ * The result is -1 if a < b, 0 if a == b and 1 if a > b */
+encounter_err_t encounter_crypto_openssl_private_cmp2(encounter_t *ctx, \
+                                 ec_count_t *a, ec_count_t *b, \
+                      ec_keyctx_t *pubK,ec_keyctx_t *privK, int *result)
+{
+        if (!ctx) return ENCOUNTER_ERR_PARAM;
+        if (!a || !b || !pubK || !privK || !result) goto end;
+
+        encounter_err_t rc;
+        unsigned long long int c;
+        bool in = false;
+        ec_count_t *diffAB = NULL;
+	BN_CTX *bnctx = BN_CTX_new();
+	BIGNUM *rand  = BN_CTX_get(bnctx);
+	BIGNUM *tmp   = BN_CTX_get(bnctx);
+	BIGNUM *tmp2  = BN_CTX_get(bnctx);
+	BIGNUM *r     = BN_CTX_get(bnctx);
+	BIGNUM *m     = BN_CTX_get(bnctx);
+        BIGNUM *pmin1 = BN_CTX_get(bnctx); 
+	BIGNUM *qmin1 = BN_CTX_get(bnctx);
+	BIGNUM *msubp = BN_CTX_get(bnctx); 
+        BIGNUM *msubq = BN_CTX_get(bnctx);
+
+        if (!msubq) OPENSSL_ERROR(end);
+
+        /* diffAB = dup a */
+        if (encounter_crypto_openssl_dup(ctx, pubK, a, &diffAB) \
+                != ENCOUNTER_OK) OPENSSL_ERROR(end);
+
+        if (!BN_rand(rand, PAILLIER_RANDOMIZER_SECLEVEL + 2, 0, 1) \
+                != ENCOUNTER_OK) OPENSSL_ERROR(end);
+
+        /* Add a random delta to diffAB */
+        if (!BN_mod_exp(tmp2, pubK->k.paillier_pubK.g, rand, \
+                pubK->k.paillier_pubK.nsquared, bnctx))
+                OPENSSL_ERROR(end);
+
+        if (!BN_mod_mul(diffAB->c, diffAB->c, tmp2, \
+                        pubK->k.paillier_pubK.nsquared, bnctx) )
+                OPENSSL_ERROR(end);
+
+        for (;;)
+        {
+                if (!BN_rand_range(r, pubK->k.paillier_pubK.n) )
+                        OPENSSL_ERROR(end);
+                if (IsInZnstar(ctx, r, pubK->k.paillier_pubK.n, \
+                                bnctx, &in)  != ENCOUNTER_OK)
+                        OPENSSL_ERROR(end);
+                if (in) break;
+        }
+        if (!BN_mod_exp(tmp, r, pubK->k.paillier_pubK.n, \
+                        pubK->k.paillier_pubK.nsquared, bnctx) )
+                OPENSSL_ERROR(end);
+        if (!BN_mod_mul(diffAB->c, diffAB->c, tmp, \
+                pubK->k.paillier_pubK.nsquared, bnctx))
+                OPENSSL_ERROR(end);
+        
+        /* subtract the other counter */
+        if (encounter_crypto_openssl_sub(ctx, diffAB, b, pubK)
+                != ENCOUNTER_OK) OPENSSL_ERROR(end);
+
+
+        /* Decrypt the result */
+	/* p-1 and q-1 */
+	if (!BN_sub(pmin1, privK->k.paillier_privK.p, BN_value_one()))
+		OPENSSL_ERROR(end);
+	if (!BN_sub(qmin1, privK->k.paillier_privK.q, BN_value_one()))
+		OPENSSL_ERROR(end);
+
+	/* c^(p-1) mod p^2 */
+	if (!BN_mod(tmp, diffAB->c, \
+			privK->k.paillier_privK.psquared, bnctx))
+		OPENSSL_ERROR(end);
+	if (!BN_mod_exp(tmp, tmp, pmin1, \
+			privK->k.paillier_privK.psquared, bnctx))
+		OPENSSL_ERROR(end);
+
+	/* m_p = L_p ( c^(p-1) mod p^2 ) h_p mod p */
+	if (encounter_crypto_openssl_fastL(ctx, tmp, tmp, \
+		privK->k.paillier_privK.p, \
+		privK->k.paillier_privK.pinvmod2tow, bnctx) \
+		!= ENCOUNTER_OK)
+		OPENSSL_ERROR(end);
+
+	if (!BN_mod_mul(msubp, tmp, privK->k.paillier_privK.hsubp, \
+			privK->k.paillier_privK.p, bnctx))
+		OPENSSL_ERROR(end);
+
+
+	/* c^(q-1) */
+	if (!BN_mod(tmp, diffAB->c, \
+		privK->k.paillier_privK.qsquared, bnctx))
+		OPENSSL_ERROR(end);
+	if (!BN_mod_exp(tmp, tmp, qmin1, \
+		privK->k.paillier_privK.qsquared,bnctx))
+		OPENSSL_ERROR(end);
+
+	/* m_q = L_q( c^(q-1) mod q^2 ) h_q mod q */
+	if (encounter_crypto_openssl_fastL(ctx, tmp, tmp, \
+			privK->k.paillier_privK.q, \
+			privK->k.paillier_privK.qinvmod2tow, bnctx) \
+		!= ENCOUNTER_OK)
+		OPENSSL_ERROR(end);
+	if (!BN_mod_mul(msubq, tmp, privK->k.paillier_privK.hsubq, \
+			privK->k.paillier_privK.q, bnctx))
+		OPENSSL_ERROR(end);
+
+	/* m = CRT(m_p, m_q) mod pq */
+	if (encounter_crypto_openssl_fastCRT(ctx, m, msubp, \
+			privK->k.paillier_privK.p, msubq, \
+			privK->k.paillier_privK.q, \
+			privK->k.paillier_privK.qInv, bnctx) \
+		!= ENCOUNTER_OK)
+		OPENSSL_ERROR(end);
+
+        /* Compare */
+        *result = BN_cmp(m, rand);
+
+        /* We are done */
+	ctx->rc = ENCOUNTER_OK;
+
+end:
+        c = 0;
+        if (diffAB) encounter_crypto_openssl_free_counter(ctx, diffAB);
+        if (rand)   BN_clear(rand); 
+        if (tmp)    BN_clear(tmp);
+        if (tmp2)   BN_clear(tmp2);
+        if (r)      BN_clear(r);
+	if (pmin1)  BN_clear(pmin1); 
+	if (qmin1)  BN_clear(qmin1);
+	if (msubp)  BN_clear(msubp); 
+	if (msubq)  BN_clear(msubq);
+	if (m)      BN_clear(m);
+        if (bnctx)  BN_CTX_end(bnctx);
+        if (bnctx)  BN_CTX_free(bnctx);
         return ctx->rc;
 }
 
@@ -868,7 +1139,7 @@ end:
 
 static encounter_err_t encounter_crypto_openssl_paillierMul(\
   encounter_t *ctx, BIGNUM *c, const ec_keyctx_t *pubK, BN_CTX *bnctx,\
-	unsigned int amount)
+	unsigned int amount, bool rand)
 {
 
 	if (!ctx || !c || !pubK || !bnctx) goto end;
@@ -880,7 +1151,12 @@ static encounter_err_t encounter_crypto_openssl_paillierMul(\
 	bool	in = false;
 
 	if (!m) OPENSSL_ERROR(end);
-	if (!BN_set_word(m, amount)) OPENSSL_ERROR(end);
+        if (rand) {
+                if (!BN_rand(m, PAILLIER_RANDOMIZER_SECLEVEL + 2, 0, 1)
+                        != ENCOUNTER_OK) OPENSSL_ERROR(end);
+        } else  {
+	        if (!BN_set_word(m, amount)) OPENSSL_ERROR(end);
+        }
 
 #if 0
 	fprintf(stdout, "paillier inc: before increment: ");
@@ -1010,7 +1286,8 @@ static encounter_err_t encounter_crypto_openssl_paillierAddSub(  \
     		encounter_t *ctx, BIGNUM *c, BIGNUM *b, \
 	const ec_keyctx_t *pubK, BN_CTX *bnctx, const bool subtract)
 {
-	if (!ctx || !c || !b || !pubK || !bnctx) goto end;
+	if (!ctx) return ENCOUNTER_ERR_PARAM;
+	if (!c || !b || !pubK || !bnctx) goto end;
 
 	BN_CTX_start(bnctx);
 	BIGNUM *tmp = BN_CTX_get(bnctx);
@@ -1027,6 +1304,7 @@ static encounter_err_t encounter_crypto_openssl_paillierAddSub(  \
 #endif
 
         if (subtract) {
+                /* FIXME: prevent from decrementing below zero */
 		if (!BN_mod_inverse(tmp2, b, \
 			pubK->k.paillier_pubK.nsquared, bnctx) )
 			OPENSSL_ERROR(end);
@@ -1094,7 +1372,7 @@ encounter_err_t encounter_crypto_openssl_decrypt(encounter_t *ctx, \
 	if (!BN_sub(qmin1, privK->k.paillier_privK.q, BN_value_one()))
 		OPENSSL_ERROR(end);
 
-	/* c^(p-1) */
+	/* c^(p-1) mod p^2 */
 	if (!BN_mod(tmp, counter->c, \
 			privK->k.paillier_privK.psquared, bnctx))
 		OPENSSL_ERROR(end);
@@ -1144,9 +1422,15 @@ encounter_err_t encounter_crypto_openssl_decrypt(encounter_t *ctx, \
 	char *plainC = BN_bn2dec(m);
 	if (!plainC) OPENSSL_ERROR(end);
 
-	*a = strtoul(plainC, NULL, 10);
+	*a = strtoull(plainC, NULL, 10);
 	OPENSSL_free(plainC);
+        if (*a == ULLONG_MAX) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_OVERFLOW, \
+                    "The requested value is larger than ULLONG_MAX. ");
+                goto end;
+        }
 
+        /* We are done */
 	ctx->rc = ENCOUNTER_OK;
 
 end:

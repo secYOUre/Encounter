@@ -152,8 +152,8 @@ encounter_err_t encounter_add(encounter_t *ctx, ec_keyctx_t *pubK, \
 	return D.add(ctx, encountA, encountB, pubK );
 }
 
-/** Subtracts two cryptographic counters placing the result in the first one
-  * without first decrypting them. */
+/** Subtracts two cryptographic counters placing the result in the 
+  * first one without first decrypting them. */
 encounter_err_t encounter_sub(encounter_t *ctx, ec_keyctx_t *pubK, \
 			ec_count_t *encountA,  ec_count_t *encountB) 
 {
@@ -201,6 +201,39 @@ encounter_err_t encounter_copy(encounter_t *ctx, ec_keyctx_t *pubK, \
         return D.copy(ctx, pubK, from, to);
 }
 
+/** Compares the supplied counters. The result is -1 if a < b, 
+ * 0 if a == b and 1 if a > b */
+encounter_err_t encounter_cmp (encounter_t *ctx,\
+                    ec_count_t *a, ec_count_t *b, ec_keyctx_t *privKA, \
+                                       ec_keyctx_t *privKB, int *result)
+{
+	__ENCOUNTER_SANITYCHECK_MEM(ctx, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(a, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(b, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(result, ENCOUNTER_ERR_PARAM);
+        if (!privKA && !privKB) return (ENCOUNTER_ERR_PARAM);
+
+        return D.cmp(ctx, a, b, privKA, privKB, result);
+}
+
+/** Compares the supplied counters encrypted under a common public-key
+ * without ever decrypting the same counters. encounter_private_cmp()
+ * can use the supplied private-key to decrypt a quantity derived from
+ * the cryptographic counters and harder to reverse-engineer.
+ * The result is -1 if a < b, 0 if a == b and 1 if a > b */
+encounter_err_t encounter_private_cmp (encounter_t *ctx,\
+                          ec_count_t *a, ec_count_t *b, \
+                     ec_keyctx_t *pubK, ec_keyctx_t *privK, int *result)
+{
+	__ENCOUNTER_SANITYCHECK_MEM(ctx, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(a, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(b, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(pubK, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(privK, ENCOUNTER_ERR_PARAM);
+	__ENCOUNTER_SANITYCHECK_MEM(result, ENCOUNTER_ERR_PARAM);
+
+        return D.private_cmp(ctx, a, b, pubK, privK, result);
+}
 
 /** Decrypt the cryptographic counter, returning the plaintext
   * Accepts the handles of the cryptographic counter and private key */

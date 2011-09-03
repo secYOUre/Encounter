@@ -12,3 +12,8 @@
 - [DONE] decrement operator, encounter_dec() - added
 - [DONE] cryptocounters subtraction operator, encounter_sub() - added
 - [DONE] cryptocounters dup and copy: added, encounter_dup() + encounter_copy()
+- [DONE] Add: encounter_private_cmp() -- Compares the supplied counters 
+         encrypted under a common public-key without ever decrypting the 
+         same counters. encounter_private_cmp() can use the supplied 
+         private-key to decrypt a quantity derived from the cryptographic 
+         counters and harder to reverse-engineer.

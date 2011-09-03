@@ -13,7 +13,8 @@ All rights reserved.                                   `Y84DP"Y825P'
 
 
 Encounter is a software library aimed at providing a production-grade
-implementation of cryptographic counters.
+implementation of cryptographic counters and fostering further research
+on their constructions and applications.
 
 A cryptographic counter is a public string representing an encryption 
 of a quantity, satisfying the following properties:

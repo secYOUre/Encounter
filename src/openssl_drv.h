@@ -46,6 +46,9 @@ struct ec_count_s {
 	BIGNUM *c;			/* the crypto counter */
 };
 
+
+#define PAILLIER_RANDOMIZER_SECLEVEL    256
+
 #define	OPENSSL_ERROR(l)	do { \
 		encounter_set_error(ctx, ENCOUNTER_ERR_CRYPTO, \
 			"openssl error: %s", \
@@ -86,11 +89,26 @@ encounter_err_t encounter_crypto_openssl_sub(encounter_t *, \
 encounter_err_t encounter_crypto_openssl_mul(encounter_t *, \
 		ec_count_t *, ec_keyctx_t *, const unsigned int);
 
+encounter_err_t encounter_crypto_openssl_mul_rand(encounter_t *, \
+		                        ec_count_t *, ec_keyctx_t *);
+
 encounter_err_t encounter_crypto_openssl_dup(encounter_t *, \
 		ec_keyctx_t *, ec_count_t *, ec_count_t **);
 
 encounter_err_t encounter_crypto_openssl_copy(encounter_t *, \
 		ec_keyctx_t *, ec_count_t *, ec_count_t *);
+
+encounter_err_t encounter_crypto_openssl_cmp(encounter_t *, \
+		                 ec_count_t *, ec_count_t *,\
+                                 ec_keyctx_t *, ec_keyctx_t *, int *);
+
+encounter_err_t encounter_crypto_openssl_private_cmp(encounter_t *, \
+		                 ec_count_t *, ec_count_t *,\
+                                 ec_keyctx_t *, ec_keyctx_t *, int *);
+
+encounter_err_t encounter_crypto_openssl_private_cmp2(encounter_t *, \
+		                 ec_count_t *, ec_count_t *,\
+                                 ec_keyctx_t *, ec_keyctx_t *, int *);
 
 encounter_err_t encounter_crypto_openssl_decrypt(encounter_t *, \
 		ec_count_t *, ec_keyctx_t *, unsigned long long int *);

@@ -19,10 +19,10 @@ struct ec_keyset_s;
  * compiles. */
 #define	ENCOUNTER_LIB_VER_MAJOR	0
 #define ENCOUNTER_LIB_VER_MINOR	2
-#define ENCOUNTER_LIB_VER_PATCH	8
+#define ENCOUNTER_LIB_VER_PATCH	10
 
 /* x.y.z, where x=major, y=minor, z=patch */
-#define	ENCOUNTER_LIB_VERSION	"0.2.8"
+#define	ENCOUNTER_LIB_VERSION	"0.2.10"
 
 
 
@@ -65,6 +65,9 @@ typedef enum
 
     ENCOUNTER_ERR_DATA,
     /**< Corrupted or unavailable data */
+
+    ENCOUNTER_ERR_OVERFLOW,
+    /**< Overflow detected while processing data. */
 
     ENCOUNTER_ERR_IMPL,
     /**< Hit an implementation limit. */
@@ -306,6 +309,21 @@ ENCOUNTER_RET encounter_dup __P((encounter_t *, ec_keyctx_t *, \
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 4 ) )\
 ENCOUNTER_RET encounter_copy __P((encounter_t *, ec_keyctx_t *, \
                                         ec_count_t *, ec_count_t *));
+
+/** Compares the supplied counters. The result is -1 if a < b, 
+ * 0 if a == b and 1 if a > b */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 6) ) \
+ENCOUNTER_RET encounter_cmp __P((encounter_t *,\
+  ec_count_t *, ec_count_t *, ec_keyctx_t *, ec_keyctx_t *, int *));
+
+/** Compares the supplied counters encrypted under a common public-key
+ * without ever decrypting the same counters. encounter_private_cmp()
+ * can use the supplied private-key to decrypt a quantity derived from
+ * the cryptographic counters and harder to reverse-engineer.
+ * The result is -1 if a < b, 0 if a == b and 1 if a > b */
+EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 4, 5, 6) ) \
+ENCOUNTER_RET encounter_private_cmp __P((encounter_t *,\
+  ec_count_t *, ec_count_t *, ec_keyctx_t *, ec_keyctx_t *, int *));
 
 /** Decrypt the cryptographic counter, returning the plaintext 
   * Accepts the handles of the cryptographic counter and private key */

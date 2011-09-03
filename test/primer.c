@@ -9,7 +9,7 @@
 #define PUBLICKEYPATH	"./publickey.txt"
 #define PRIVATEKEYPATH	"./privatekey.txt"
 
-#define	KEYSIZE	1024
+#define	KEYSIZE 1024
 
 int main(int argc, char *argv[]) 
 {
@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
         ec_count_t  *counter_copy = NULL;
 	ec_keyset_t *keyset = NULL, *keyset2 = NULL;
 	unsigned long long int c = 0;
-	int a = 0;
+	int a = 0, result = 0;
 
 start:
 	/* Initialize Encounter */
@@ -129,6 +129,7 @@ start:
 	if (encounter_decrypt(ctx, encounter, privK, &c) != ENCOUNTER_OK)
 			goto end;
 
+        assert(c == 11);
 	printf("Crypto-counter decryption: succeeded\n");
 	printf("Plaintext counter: %lld\n", c);
 
@@ -163,8 +164,20 @@ start:
 	/* 19-> 23 */
 	if (encounter_add(ctx, pubK, encounter, encounterB) \
 			!= ENCOUNTER_OK) goto end;
-	
+
 	printf("Adding counterB back to counterA: succeeded\n");
+
+        if (encounter_cmp(ctx, encounter, encounterB, \
+                privK, NULL, &result) != ENCOUNTER_OK) goto end;
+        assert(result == 1);
+
+        printf("Comparing counters: succeeded\n");	
+
+        if (encounter_private_cmp(ctx, encounter, encounterB, \
+                pubK, privK, &result) != ENCOUNTER_OK) goto end;
+        assert(result == 1);
+
+        printf("Private comparison of counters: succeeded\n");	
 
         /* 23 -> 115 */
 	if (encounter_mul(ctx, pubK, encounter, 5) != ENCOUNTER_OK)
@@ -181,6 +194,7 @@ start:
 	if (encounter_decrypt(ctx, encounter, privK, &c) != ENCOUNTER_OK)
 			goto end;
 
+        assert(c == 110);
 	printf("Crypto-counter decryption: succeeded\n");
 	printf("Plaintext counter: %lld\n", c);
 
@@ -192,6 +206,7 @@ start:
 	if (encounter_decrypt(ctx, encounter, privK, &c) != ENCOUNTER_OK)
 			goto end;
 
+        assert(c == 110);
 	printf("Crypto-counter decryption: succeeded\n");
 	printf("Plaintext counter: %lld\n", c);
 #endif
@@ -204,6 +219,7 @@ start:
 	if (encounter_decrypt(ctx, counter_dup, privK, &c) \
                 != ENCOUNTER_OK) goto end;
 
+        assert(c == 110);
 	printf("Duplicated Cryptocounter decryption: succeeded\n");
 	printf("Plaintext counter: %lld\n", c);
 
@@ -220,8 +236,22 @@ start:
 	if (encounter_decrypt(ctx, counter_copy, privK, &c) \
                 != ENCOUNTER_OK) goto end;
 
+        assert(c == 110);
 	printf("Cryptocounter copy decryption: succeeded\n");
 	printf("Plaintext counter: %lld\n", c);
+
+        if (encounter_mul_rand(ctx, pubK, encounter) != ENCOUNTER_OK)
+                goto end;
+
+        printf("Multiplication by a random number: succeeded\n");
+
+	if (encounter_decrypt(ctx, encounter, privK, &c) \
+                != ENCOUNTER_OK) goto end;
+
+        assert(c > 0);
+	printf("Random cryptocounter decryption: succeeded\n");
+	printf("Plaintext counter: %lld\n", c);
+
 
 end:
 	a++;
