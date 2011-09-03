@@ -19,10 +19,10 @@ struct ec_keyset_s;
  * compiles. */
 #define	ENCOUNTER_LIB_VER_MAJOR	0
 #define ENCOUNTER_LIB_VER_MINOR	2
-#define ENCOUNTER_LIB_VER_PATCH	10
+#define ENCOUNTER_LIB_VER_PATCH	11
 
 /* x.y.z, where x=major, y=minor, z=patch */
-#define	ENCOUNTER_LIB_VERSION	"0.2.10"
+#define	ENCOUNTER_LIB_VERSION	"0.2.11"
 
 
 

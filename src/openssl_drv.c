@@ -227,6 +227,8 @@ static encounter_err_t encounter_crypto_openssl_new_keyctx( \
 }
 
 encounter_err_t encounter_crypto_openssl_free_keyctx(encounter_t *ctx, ec_keyctx_t *keyctx) {
+        if (!ctx) return ENCOUNTER_ERR_PARAM;
+
 	if (keyctx) {
 		switch (keyctx->type) {
 			case EC_KEYTYPE_PAILLIER_PUBLIC:
@@ -262,6 +264,8 @@ encounter_err_t encounter_crypto_openssl_keygen(encounter_t *ctx, \
 	encounter_key_t type, unsigned int keysize, ec_keyctx_t **pubK, ec_keyctx_t **privK) 
 {
 	encounter_err_t rc;
+
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
 
 	__ENCOUNTER_SANITYCHECK_KEYTYPE(type, ENCOUNTER_ERR_PARAM);
 	__ENCOUNTER_SANITYCHECK_KEYSIZE(keysize, ENCOUNTER_ERR_PARAM);
@@ -370,7 +374,12 @@ err:
 static encounter_err_t encounter_crypto_openssl_new_paillierGenerator(\
 		encounter_t *ctx, BIGNUM *g, const ec_keyctx_t *privK)
 {
-	if (!ctx | !g || !privK) goto end;
+	if (!ctx)         return ENCOUNTER_ERR_PARAM;
+	if (!g || !privK) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM,
+                        "null param");
+                goto end;
+        }
 
 	BIGNUM *tmp, *inv, *pmin1, *qmin1, *gsubp, *gsubq;
 	bool in = false;
@@ -456,6 +465,13 @@ static encounter_err_t encounter_crypto_openssl_qInv(encounter_t *ctx, \
 	BIGNUM *qInv, const BIGNUM *p, const BIGNUM *q, BN_CTX *bnctx)
 
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+        if (!qInv || !p || !q || !bnctx) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM,
+                        "null param");
+                goto end;
+        }
+
 	if (!BN_mod(qInv, q, p, bnctx)) OPENSSL_ERROR(end);
 	if (!BN_mod_inverse(qInv, qInv, p, bnctx)) OPENSSL_ERROR(end);
 
@@ -468,6 +484,12 @@ end:
 static encounter_err_t encounter_crypto_openssl_invMod2toW(\
 	encounter_t *ctx, BIGNUM *ninvmod2tow, const BIGNUM *n, \
 						BN_CTX *bnctx) {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+        if (!ninvmod2tow || !n || !bnctx) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM,
+                        "null param");
+        }
+
 	BN_CTX_start(bnctx);
 	BIGNUM *twotow = BN_CTX_get(bnctx);
 
@@ -492,6 +514,14 @@ static encounter_err_t encounter_crypto_openssl_hConstant (\
 	const BIGNUM *g, const BIGNUM *p,const BIGNUM *psquared, \
 	const BIGNUM *pinvmod2tow,BN_CTX *bnctx)
 {
+        if (!ctx)      
+                return ENCOUNTER_ERR_PARAM;
+        if (!hsubp || !g || !p || !psquared || !qinvmod2tow || !bnctx){
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
+                goto end;
+        }
+
 	BN_CTX_start(bnctx);
 	BIGNUM *tmp = BN_CTX_get(bnctx);
 	BIGNUM *pmin1 = BN_CTX_get(bnctx);
@@ -522,6 +552,13 @@ static encounter_err_t encounter_crypto_openssl_fastL(encounter_t *ctx,\
                           BIGNUM *y, const BIGNUM *u, const BIGNUM *n, \
                                const BIGNUM *ninvmod2tow, BN_CTX *bnctx)
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+        if (!y || !u || !n || !ninvmod2tow || !bnctx) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
+                goto end;
+        }
+
 	BN_CTX_start(bnctx);
 	BIGNUM *tmp = BN_CTX_get(bnctx);
 
@@ -546,6 +583,8 @@ end:
 
 encounter_err_t encounter_crypto_openssl_new_counter(encounter_t *ctx, ec_keyctx_t *pubK, ec_count_t **counter) 
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+
 	if (counter) {
 		*counter = calloc(1, sizeof **counter);
 		if (*counter) {
@@ -573,6 +612,8 @@ encounter_err_t encounter_crypto_openssl_new_counter(encounter_t *ctx, ec_keyctx
 
 encounter_err_t encounter_crypto_openssl_free_counter(encounter_t *ctx, ec_count_t *counter_p) 
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+
 	if (counter_p) {
 		BN_free(counter_p->c);
 		memset(counter_p, 0, sizeof *counter_p);
@@ -585,6 +626,13 @@ encounter_err_t encounter_crypto_openssl_free_counter(encounter_t *ctx, ec_count
 static encounter_err_t encounter_crypto_openssl_paillierEncrypt(\
   encounter_t *ctx, BIGNUM *c, const BIGNUM *m, const ec_keyctx_t *pubK)
 {
+        if (!ctx)               return ENCOUNTER_ERR_PARAM;
+        if (!c || !m || !pubK)  {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
+                goto end;
+        }
+
 	BN_CTX *bnctx = BN_CTX_new();
 	bool in = false;
 	BN_CTX_start(bnctx);
