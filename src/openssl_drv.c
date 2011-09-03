@@ -516,7 +516,7 @@ static encounter_err_t encounter_crypto_openssl_hConstant (\
 {
         if (!ctx)      
                 return ENCOUNTER_ERR_PARAM;
-        if (!hsubp || !g || !p || !psquared || !qinvmod2tow || !bnctx){
+        if (!hsubp || !g || !p || !psquared || !pinvmod2tow || !bnctx){
                 encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
                         "null param");
                 goto end;
@@ -678,8 +678,12 @@ end:
 static encounter_err_t IsInZnstar(encounter_t *ctx, const BIGNUM *a,\
 		const BIGNUM *n, BN_CTX *bnctx, bool *in)
 {
-	if (!ctx || !a || !n || !bnctx || !in) 
-		return ENCOUNTER_ERR_PARAM;
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+	if (!a || !n || !bnctx || !in) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
+                goto end;
+        }
 
 	*in = true;
 	ctx->rc = ENCOUNTER_OK;
@@ -705,8 +709,12 @@ end:
 static encounter_err_t IsInZnSquaredstar(encounter_t *ctx, \
     const BIGNUM *a, const BIGNUM *nsquared, BN_CTX *bnctx, bool *in)
 {
-	if (!ctx || !a || !nsquared || !bnctx || !in) 
-		return ENCOUNTER_ERR_PARAM;
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+	if (!a || !nsquared || !bnctx || !in)  {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
+                goto end;
+        }
 
 	*in = false;
 	ctx->rc = ENCOUNTER_OK;
@@ -732,6 +740,12 @@ end:
 encounter_err_t encounter_crypto_openssl_inc(encounter_t *ctx, \
 	ec_count_t *counter, ec_keyctx_t *pubK, const unsigned int a) 
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+        if (!counter || !pubK) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
+                goto end;
+        }
 	BN_CTX *bnctx = BN_CTX_new();
 
 	if (encounter_crypto_openssl_paillierUpdate(ctx, \
@@ -751,6 +765,12 @@ end:
 encounter_err_t encounter_crypto_openssl_dec(encounter_t *ctx, \
          ec_count_t *counter, ec_keyctx_t *pubK, const unsigned int a) 
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+        if (!counter || !pubK) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
+                goto end;
+        }
 	BN_CTX *bnctx = BN_CTX_new();
 
 	if (encounter_crypto_openssl_paillierUpdate(ctx, \
@@ -770,6 +790,12 @@ end:
 encounter_err_t encounter_crypto_openssl_mul(encounter_t *ctx, \
          ec_count_t *counter, ec_keyctx_t *pubK, const unsigned int a)
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+        if (!counter || !pubK) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
+                goto end;
+        }
 	BN_CTX *bnctx = BN_CTX_new();
 
 	if (encounter_crypto_openssl_paillierMul(ctx, \
@@ -789,6 +815,12 @@ end:
 encounter_err_t encounter_crypto_openssl_mul_rand(encounter_t *ctx, \
                                 ec_count_t *counter, ec_keyctx_t *pubK)
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+        if (!counter || !pubK) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
+                goto end;
+        }
 	BN_CTX *bnctx = BN_CTX_new();
 
 	if (encounter_crypto_openssl_paillierMul(ctx, \
@@ -808,6 +840,7 @@ end:
 encounter_err_t encounter_crypto_openssl_dup(encounter_t *ctx, \
                 ec_keyctx_t *pubK, ec_count_t *from, ec_count_t **to)
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
 	if (from && to) {
 		*to = calloc(1, sizeof **to);
 		if (*to) {
@@ -871,8 +904,12 @@ encounter_err_t encounter_crypto_openssl_cmp(encounter_t *ctx, \
         unsigned long long int pa, pb;
         ec_keyctx_t *ka, *kb;
 
-        if (!ctx || !a || !b || !result) 
-                return ENCOUNTER_ERR_PARAM;
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+        if (!a || !b || !result) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM,
+                        "null param");
+                goto end;
+        }
 
         /* At least one private key must be supplied */
         if (!privKA && !privKB) goto end;
@@ -910,7 +947,11 @@ encounter_err_t encounter_crypto_openssl_private_cmp(encounter_t *ctx, \
                       ec_keyctx_t *pubK,ec_keyctx_t *privK, int *result)
 {
         if (!ctx) return ENCOUNTER_ERR_PARAM;
-        if (!a || !b || !pubK || !privK || !result) goto end;
+        if (!a || !b || !pubK || !privK || !result) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
+                goto end;
+        }
 
         unsigned long long int c;
         encounter_err_t rc;
@@ -979,7 +1020,11 @@ encounter_err_t encounter_crypto_openssl_private_cmp2(encounter_t *ctx, \
                       ec_keyctx_t *pubK,ec_keyctx_t *privK, int *result)
 {
         if (!ctx) return ENCOUNTER_ERR_PARAM;
-        if (!a || !b || !pubK || !privK || !result) goto end;
+        if (!a || !b || !pubK || !privK || !result) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
+                goto end;
+        }
 
         encounter_err_t rc;
         unsigned long long int c;
@@ -1115,7 +1160,12 @@ static encounter_err_t encounter_crypto_openssl_paillierUpdate(\
   encounter_t *ctx, BIGNUM *c, const ec_keyctx_t *pubK, BN_CTX *bnctx, \
 			const unsigned int amount, bool decrement)
 {
-	if (!ctx || !c || !pubK || !bnctx) goto end;
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+	if (!c || !pubK || !bnctx) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
+                goto end;
+        }
 
 	BN_CTX_start(bnctx);
 	BIGNUM *tmp = BN_CTX_get(bnctx);
@@ -1190,7 +1240,12 @@ static encounter_err_t encounter_crypto_openssl_paillierMul(\
 	unsigned int amount, bool rand)
 {
 
-	if (!ctx || !c || !pubK || !bnctx) goto end;
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+	if (!c || !pubK || !bnctx) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM,
+                        "null param");
+                goto end;
+        }
 
 	BN_CTX_start(bnctx);
 	BIGNUM *tmp = BN_CTX_get(bnctx);
@@ -1251,6 +1306,12 @@ end:
 encounter_err_t encounter_crypto_openssl_touch(encounter_t *ctx, \
 			ec_count_t *counter, ec_keyctx_t *pubK) 
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+        if (!counter || !pubK) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM,
+                        "null param");
+                goto end;
+        }
 	BN_CTX *bnctx = BN_CTX_new();
 	BN_CTX_start(bnctx);
 	BIGNUM *tmp = BN_CTX_get(bnctx);
@@ -1293,6 +1354,12 @@ end:
 encounter_err_t encounter_crypto_openssl_add(encounter_t *ctx, \
        ec_count_t *encountA, ec_count_t *encountB, ec_keyctx_t *pubK)
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+        if (!encountA || !encountB || !pubK) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM,
+                        "null param");
+                goto end;
+        }
 	BN_CTX *bnctx = BN_CTX_new();
 
 	if (encounter_crypto_openssl_paillierAddSub(ctx, \
@@ -1313,6 +1380,12 @@ end:
 encounter_err_t encounter_crypto_openssl_sub(encounter_t *ctx, \
        ec_count_t *encountA, ec_count_t *encountB, ec_keyctx_t *pubK)
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+        if (!encountA || !encountB || !pubK) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM,
+                        "null param");
+                goto end;
+        }
 	BN_CTX *bnctx = BN_CTX_new();
 
 	if (encounter_crypto_openssl_paillierAddSub(ctx, \
@@ -1335,7 +1408,11 @@ static encounter_err_t encounter_crypto_openssl_paillierAddSub(  \
 	const ec_keyctx_t *pubK, BN_CTX *bnctx, const bool subtract)
 {
 	if (!ctx) return ENCOUNTER_ERR_PARAM;
-	if (!c || !b || !pubK || !bnctx) goto end;
+	if (!c || !b || !pubK || !bnctx) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
+                goto end;
+        }
 
 	BN_CTX_start(bnctx);
 	BIGNUM *tmp = BN_CTX_get(bnctx);
@@ -1400,7 +1477,13 @@ end:
 encounter_err_t encounter_crypto_openssl_decrypt(encounter_t *ctx, \
      ec_count_t *counter, ec_keyctx_t *privK, unsigned long long int *a)
 {
-	if (!ctx || !counter || !privK ||  !a) goto end;
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+
+	if ( !counter || !privK ||  !a) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
+                goto end;
+        }
 
 	BN_CTX *bnctx = BN_CTX_new();
 	BN_CTX_start(bnctx);
@@ -1500,8 +1583,12 @@ static encounter_err_t encounter_crypto_openssl_fastCRT(\
 	encounter_t *ctx, BIGNUM *g, const BIGNUM *g1, const BIGNUM *p,\
    const BIGNUM *g2, const BIGNUM *q, const BIGNUM *qInv, BN_CTX *bnctx)
 {
-	if (!ctx || !g || !g1 || !p || !g2 || !q || !qInv || !bnctx)
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+	if (!g || !g1 || !p || !g2 || !q || !qInv || !bnctx) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
 		goto end;
+        }
 
 	BN_CTX_start(bnctx);
 	BIGNUM *tmp = BN_CTX_get(bnctx);
@@ -1530,6 +1617,7 @@ end:
 encounter_err_t encounter_crypto_openssl_numToString(encounter_t  *ctx,\
                 ec_keyctx_t *keyctx, ec_keystring_t **key) 
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
 	if (keyctx && key) {
 		*key = calloc(1, sizeof **key);
 		if (*key == NULL) {
@@ -1614,6 +1702,7 @@ encounter_err_t encounter_crypto_openssl_stringToNum(encounter_t *ctx,\
                 ec_keystring_t *key, ec_keyctx_t **keyctx) 
 
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
 	if (key && keyctx) {
 		switch (key->type) {
 			case EC_KEYTYPE_PAILLIER_PUBLIC:
@@ -1709,13 +1798,14 @@ encounter_err_t encounter_crypto_openssl_stringToNum(encounter_t *ctx,\
 encounter_err_t encounter_crypto_openssl_counterToString(\
 	encounter_t *ctx, ec_count_t *encount, char **counter) 
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+
 	if (encount && counter) {
 		*counter = BN_bn2hex(encount->c);
 		if (counter) 	ctx->rc = ENCOUNTER_OK;
 		else		ctx->rc = ENCOUNTER_ERR_CRYPTO;
 
 	} else ctx->rc = ENCOUNTER_ERR_PARAM;
-
 	return ctx->rc;
 }
 
@@ -1723,12 +1813,17 @@ encounter_err_t encounter_crypto_openssl_counterStrDispose(\
 				encounter_t *ctx, char *counter) 
 {
 	if (counter) OPENSSL_free(counter);
+
+        ctx->rc = ENCOUNTER_OK;
+        return ctx->rc;
 }
 
 
 encounter_err_t encounter_crypto_openssl_dispose_keystring(\
 		encounter_t *ctx, ec_keystring_t *key) 
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+
 	if (key) {
 		switch(key->type) {
 			case EC_KEYTYPE_PAILLIER_PUBLIC:
@@ -1765,6 +1860,8 @@ encounter_err_t encounter_crypto_openssl_dispose_keystring(\
 encounter_err_t encounter_crypto_openssl_dispose_counterString(\
 			encounter_t *ctx, char *counter)
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+
 	if (counter) OPENSSL_free(counter);
 
 	ctx->rc = ENCOUNTER_OK;
@@ -1774,7 +1871,12 @@ encounter_err_t encounter_crypto_openssl_dispose_counterString(\
 encounter_err_t encounter_crypto_openssl_stringToCounter(\
          encounter_t *ctx, const char *counter, ec_count_t **encount)
 {
-	if (!ctx || !counter || !encount) goto err;
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+	if (!counter || !encount) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM,\
+                        "null param");
+                goto err;
+        }
 
 	*encount = calloc(1, sizeof **encount);
 	if (*encount) {

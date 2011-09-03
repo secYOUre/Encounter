@@ -13,6 +13,12 @@
 encounter_err_t encounter_plain_storekey(encounter_t *ctx, \
 			ec_keyctx_t *keyctx, const char *path)
 {
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+        if (!keyctx || !path) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null param");
+                goto end;
+        }
 
 	FILE *keyfile = NULL;
 	ec_keystring_t *key = NULL;
@@ -69,8 +75,13 @@ end:
 encounter_err_t encounter_plain_loadPublicKey(encounter_t *ctx, \
 			const char *path, ec_keyctx_t **keyctx) 
 {
-	if (!ctx || !path || !keyctx) goto end;
-
+	if (!ctx)       return ENCOUNTER_ERR_PARAM;
+	if (!path || !keyctx) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM,\
+                       "null");
+                goto end;
+        }       
+                
 	FILE *keyfile = fopen(path, "r");
 	if (!keyfile) {
 		encounter_set_error(ctx, ENCOUNTER_ERR_OS, "fopen: failed");
@@ -119,7 +130,12 @@ end:
 encounter_err_t encounter_plain_loadPrivKey(encounter_t *ctx, \
 	const char *path, const char *passphrase, ec_keyctx_t **keyctx)
 {
-	if (!ctx || !path || !keyctx) goto end;
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+	if (!path || !keyctx) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null");
+                goto end;
+        }
 
 	FILE *keyfile = fopen(path, "r");
 	if (!keyfile) {
@@ -195,7 +211,12 @@ end:
 encounter_err_t encounter_plain_persist_cnt(encounter_t *ctx, \
                               ec_count_t *encount, const char *path) 
 {
-	if (!ctx || !encount || !path) goto end;
+        if (!ctx)       return ENCOUNTER_ERR_PARAM;
+	if (!encount || !path) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM, \
+                        "null");
+                goto end;
+        }
 
 	FILE *counterFile  = NULL;
 	char *counter = NULL;
@@ -224,7 +245,12 @@ end:
 encounter_err_t encounter_plain_get_counter(encounter_t *ctx, \
                          const char *path, ec_count_t **encount) 
 {
-	if (!ctx || !path || !encount) goto end;
+        if (!ctx) return ENCOUNTER_ERR_PARAM;
+	if (!path || !encount) {
+                encounter_set_error(ctx, ENCOUNTER_ERR_PARAM,\
+                        "null");
+                goto end;
+        }
 
 	char *line = (char *) calloc(1, ENCOUNTER_STORE_PLAIN_MAXLINE);
 	FILE *counterFile = fopen(path, "r");
@@ -247,12 +273,16 @@ end:
 
 encounter_err_t encounter_plain_init_store(encounter_t *ctx) 
 {
+        if (!ctx) return ENCOUNTER_ERR_PARAM;
+
 	ctx->rc = ENCOUNTER_OK;
 	return ctx->rc;
 }
 
 encounter_err_t encounter_plain_term_store(encounter_t *ctx) 
 {
+        if (!ctx) return ENCOUNTER_ERR_PARAM;
+
 	ctx->rc = ENCOUNTER_OK;
 	return ctx->rc;
 }

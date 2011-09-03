@@ -240,18 +240,6 @@ start:
 	printf("Cryptocounter copy decryption: succeeded\n");
 	printf("Plaintext counter: %lld\n", c);
 
-        if (encounter_mul_rand(ctx, pubK, encounter) != ENCOUNTER_OK)
-                goto end;
-
-        printf("Multiplication by a random number: succeeded\n");
-
-	if (encounter_decrypt(ctx, encounter, privK, &c) \
-                != ENCOUNTER_OK) goto end;
-
-        assert(c > 0);
-	printf("Random cryptocounter decryption: succeeded\n");
-	printf("Plaintext counter: %lld\n", c);
-
 
 end:
 	a++;
