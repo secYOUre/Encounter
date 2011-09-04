@@ -1151,7 +1151,6 @@ end:
 	if (msubp)  BN_clear(msubp); 
 	if (msubq)  BN_clear(msubq);
 	if (m)      BN_clear(m);
-        if (bnctx)  BN_CTX_end(bnctx);
         if (bnctx)  BN_CTX_free(bnctx);
         return ctx->rc;
 }

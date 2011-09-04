@@ -19,10 +19,10 @@ struct ec_keyset_s;
  * compiles. */
 #define	ENCOUNTER_LIB_VER_MAJOR	0
 #define ENCOUNTER_LIB_VER_MINOR	2
-#define ENCOUNTER_LIB_VER_PATCH	11
+#define ENCOUNTER_LIB_VER_PATCH	12
 
 /* x.y.z, where x=major, y=minor, z=patch */
-#define	ENCOUNTER_LIB_VERSION	"0.2.11"
+#define	ENCOUNTER_LIB_VERSION	"0.2.12"
 
 
 
@@ -69,7 +69,7 @@ typedef enum
     ENCOUNTER_ERR_OVERFLOW,
     /**< Overflow detected while processing data. */
 
-    ENCOUNTER_ERR_IMPL,
+    ENCOUNTER_ERR_IMPL
     /**< Hit an implementation limit. */
 
 } encounter_err_t;
