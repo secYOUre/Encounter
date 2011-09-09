@@ -80,3 +80,13 @@ Encounter implements a speed-up technique described in Paillier's
    Published in J. Stern, Ed., Advances in Cryptology  EUROCRYPT 99,
    vol. 1592 of Lecture Notes in Computer Science, pp. 223-238,
    Springer-Verlag, 1999.
+
+ 
+For More
+========
+
+1. Encounter
+   <http://plaintext.crypto.lo.gy/article/658/encounter>
+
+2. Privacy Preserving Comparison of Cryptographic Counters
+   <http://plaintext.crypto.lo.gy/article/661/privacy-preserving-comparison-of-cryptographic-counters>
