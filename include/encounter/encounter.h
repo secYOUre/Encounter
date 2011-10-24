@@ -242,79 +242,81 @@ __BEGIN_DECLS
   * This will need to be supplied as the first parameter of each
   * Encounter API */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (2) ) \
-ENCOUNTER_RET encounter_init __P((const unsigned int, encounter_t **));
+ENCOUNTER_RET encounter_init __P((\
+                        const unsigned int, encounter_t EC_PTR EC_PTR));
 
 /** Return last errno */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1) ) \
-ENCOUNTER_RET encounter_error __P((encounter_t *));
+ENCOUNTER_RET encounter_error __P((encounter_t EC_PTR));
 
 /** Generate a keypair according to the scheme and size selected 
  * respectively by the second and third parametes */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 4, 5) ) \
-ENCOUNTER_RET encounter_keygen __P((encounter_t *, encounter_key_t, \
-			unsigned int, ec_keyctx_t **, ec_keyctx_t **));
+ENCOUNTER_RET encounter_keygen __P((encounter_t EC_PTR, encounter_key_t, \
+	unsigned int, ec_keyctx_t EC_PTR EC_PTR, ec_keyctx_t EC_PTR EC_PTR));
 
 /** Accepts a key context and returns a new cryptographic cnt handle */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3) ) \
-ENCOUNTER_RET encounter_new_counter __P((encounter_t *, \
-					ec_keyctx_t *, ec_count_t **));
+ENCOUNTER_RET encounter_new_counter __P((encounter_t EC_PTR, \
+			ec_keyctx_t EC_PTR, ec_count_t EC_PTR EC_PTR));
 
 /** Dispose the cryptographic counter referenced by the 2nd parameter */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2) )\
-ENCOUNTER_RET encounter_dispose_counter __P((encounter_t *, \
-							ec_count_t *));
+ENCOUNTER_RET encounter_dispose_counter __P((encounter_t EC_PTR, \
+						ec_count_t EC_PTR));
 
 /** Increment the cryptographic counter by the amount in a,
   * without first decrypting it. */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3) )\
-ENCOUNTER_RET encounter_inc __P((encounter_t *, ec_keyctx_t *, \
-				ec_count_t *, const unsigned int));
+ENCOUNTER_RET encounter_inc __P((encounter_t EC_PTR, \
+        ec_keyctx_t EC_PTR, ec_count_t EC_PTR, const unsigned int));
 
 /** Decrement the cryptographic counter by the amount in a,
   * without first decrypting it. */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3) )\
-ENCOUNTER_RET encounter_dec __P((encounter_t *, ec_keyctx_t *, \
-				ec_count_t *, const unsigned int));
+ENCOUNTER_RET encounter_dec __P((encounter_t EC_PTR, \
+        ec_keyctx_t EC_PTR, ec_count_t EC_PTR, const unsigned int));
 
 /** Touch the crypto counter by probabilistically re-rencrypting it.
   * The plaintext counter is not affected */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3) )\
-ENCOUNTER_RET encounter_touch __P((encounter_t *, ec_keyctx_t *, \
-							ec_count_t *));
+ENCOUNTER_RET encounter_touch __P((encounter_t EC_PTR, \
+                ec_keyctx_t EC_PTR,  ec_count_t EC_PTR));
 
 /** Adds two cryptographic counters placing the result in the first one
   * without first decrypting them. */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 4) )\
-ENCOUNTER_RET encounter_add __P((encounter_t *, ec_keyctx_t *, \
-					ec_count_t *, ec_count_t *));
+ENCOUNTER_RET encounter_add __P((encounter_t EC_PTR, \
+          ec_keyctx_t EC_PTR, ec_count_t EC_PTR, ec_count_t EC_PTR));
 
 /** Subtracts two cryptographic counters placing the result in the first one
   * without first decrypting them. */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 4) )\
-ENCOUNTER_RET encounter_sub __P((encounter_t *, ec_keyctx_t *, \
-					ec_count_t *, ec_count_t *));
+ENCOUNTER_RET encounter_sub __P((encounter_t EC_PTR, \
+            ec_keyctx_t EC_PTR, ec_count_t EC_PTR, ec_count_t EC_PTR));
 
 /** Multiply a cryptographic counters by a given quantity
   * without first decrypting it. */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3 ) )\
-ENCOUNTER_RET encounter_mul __P((encounter_t *, ec_keyctx_t *, \
-				ec_count_t *, const unsigned int));
+ENCOUNTER_RET encounter_mul __P((encounter_t EC_PTR, \
+            ec_keyctx_t EC_PTR, ec_count_t EC_PTR, const unsigned int));
 
 /** Creates a new ec_count_t containing the value 'from' */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 4 ) )\
-ENCOUNTER_RET encounter_dup __P((encounter_t *, ec_keyctx_t *, \
-                                        ec_count_t *, ec_count_t **));
+ENCOUNTER_RET encounter_dup __P((encounter_t EC_PTR, \
+      ec_keyctx_t EC_PTR, ec_count_t EC_PTR, ec_count_t EC_PTR EC_PTR));
 
 /** Copies the 'from' counter to 'to'. */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 4 ) )\
-ENCOUNTER_RET encounter_copy __P((encounter_t *, ec_keyctx_t *, \
-                                        ec_count_t *, ec_count_t *));
+ENCOUNTER_RET encounter_copy __P((encounter_t EC_PTR, \
+      ec_keyctx_t EC_PTR, ec_count_t EC_PTR, ec_count_t EC_PTR));
 
 /** Compares the supplied counters. The result is -1 if a < b, 
  * 0 if a == b and 1 if a > b */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 6) ) \
-ENCOUNTER_RET encounter_cmp __P((encounter_t *,\
-  ec_count_t *, ec_count_t *, ec_keyctx_t *, ec_keyctx_t *, int *));
+ENCOUNTER_RET encounter_cmp __P((encounter_t EC_PTR,\
+  ec_count_t EC_PTR, ec_count_t EC_PTR, ec_keyctx_t EC_PTR, \
+  ec_keyctx_t EC_PTR, int EC_PTR));
 
 /** Compares the supplied counters encrypted under a common public-key
  * without ever decrypting the same counters. encounter_private_cmp()
@@ -322,69 +324,71 @@ ENCOUNTER_RET encounter_cmp __P((encounter_t *,\
  * the cryptographic counters and harder to reverse-engineer.
  * The result is -1 if a < b, 0 if a == b and 1 if a > b */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 4, 5, 6) ) \
-ENCOUNTER_RET encounter_private_cmp __P((encounter_t *,\
-  ec_count_t *, ec_count_t *, ec_keyctx_t *, ec_keyctx_t *, int *));
+ENCOUNTER_RET encounter_private_cmp __P((encounter_t EC_PTR,\
+  ec_count_t EC_PTR, ec_count_t EC_PTR, ec_keyctx_t EC_PTR, \
+  ec_keyctx_t EC_PTR, int EC_PTR));
 
 /** Decrypt the cryptographic counter, returning the plaintext 
   * Accepts the handles of the cryptographic counter and private key */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3, 4) )\
-ENCOUNTER_RET encounter_decrypt __P((encounter_t *, ec_count_t *, \
-			ec_keyctx_t *, unsigned long long int *));
+ENCOUNTER_RET encounter_decrypt __P((encounter_t EC_PTR, \
+ ec_count_t EC_PTR, ec_keyctx_t EC_PTR, unsigned long long int EC_PTR));
 
 /** Dispose the cryptographic counter referenced by the handle */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2) )\
-ENCOUNTER_RET encounter_dispose_keyctx __P((encounter_t *, \
-							ec_keyctx_t *));
+ENCOUNTER_RET encounter_dispose_keyctx __P((encounter_t EC_PTR, \
+						ec_keyctx_t EC_PTR));
 
 
 /** Add a public key to keyset */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3) )\
-ENCOUNTER_RET encounter_add_publicKey __P((encounter_t *, \
-					ec_keyctx_t *,  ec_keyset_t *));
+ENCOUNTER_RET encounter_add_publicKey __P((encounter_t EC_PTR, \
+			ec_keyctx_t EC_PTR,  ec_keyset_t EC_PTR));
 
 /** Add a private key to keyset */
 /* To date, no keyset encryption mechanism is supported by the current
  * keystore mechanisms. The fourth parameter must be NULL */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3 ) )\
-ENCOUNTER_RET encounter_add_privateKey __P((encounter_t *, \
-			ec_keyctx_t *,  ec_keyset_t *, const char *));
+ENCOUNTER_RET encounter_add_privateKey __P((encounter_t EC_PTR, \
+	ec_keyctx_t EC_PTR,  ec_keyset_t EC_PTR, const char EC_PTR));
 
 /** Get a public key from a keyset */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3 ) )\
-ENCOUNTER_RET	encounter_get_publicKey __P((encounter_t *, \
-			ec_keyset_t *, ec_keyctx_t **));
+ENCOUNTER_RET	encounter_get_publicKey __P((encounter_t EC_PTR, \
+			ec_keyset_t EC_PTR, ec_keyctx_t EC_PTR EC_PTR));
 
 /** Get a private key from a keyset */
 /* To date, no keyset encryption mechanism is supported by the current
  * keystore mechanisms. The third parameter must be NULL */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 4 ) )\
-ENCOUNTER_RET	encounter_get_privateKey __P((encounter_t *, \
-			ec_keyset_t *, const char *, ec_keyctx_t **));
+ENCOUNTER_RET	encounter_get_privateKey __P((encounter_t EC_PTR, \
+ ec_keyset_t EC_PTR, const char EC_PTR, ec_keyctx_t EC_PTR EC_PTR));
 
 /** Persist a cryptographic counter to a file */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3 ) )\
-ENCOUNTER_RET encounter_persist_counter __P((encounter_t *, \
-					ec_count_t *, const char *));
+ENCOUNTER_RET encounter_persist_counter __P((encounter_t EC_PTR, \
+			ec_count_t EC_PTR, const char EC_PTR));
 
 /** Get a cryptographic counter from a file */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2, 3 ) )\
-ENCOUNTER_RET encounter_get_counter __P((encounter_t *, \
-					const char *, ec_count_t **));
+ENCOUNTER_RET encounter_get_counter __P((encounter_t EC_PTR, \
+			const char EC_PTR, ec_count_t EC_PTR EC_PTR));
 
 /** Create a keyset handle */
 /* To date, no keyset encryption mechanism is supported by the current
  * keystore mechanisms. The fourth parameter must be NULL */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 3, 5 ) )\
-ENCOUNTER_RET encounter_create_keyset __P((encounter_t *,\
-      encounter_keyset_t,  const char *, const char *, ec_keyset_t **));
+ENCOUNTER_RET encounter_create_keyset __P((encounter_t EC_PTR,\
+      encounter_keyset_t,  const char EC_PTR, const char EC_PTR, \
+      ec_keyset_t EC_PTR EC_PTR));
 
 /** Dispose a keyset handle */
 EC_CHECK_RETVAL EC_NONNULL_ARG( (1, 2) )\
-ENCOUNTER_RET encounter_dispose_keyset __P((encounter_t *, \
-						ec_keyset_t *));
+ENCOUNTER_RET encounter_dispose_keyset __P((encounter_t EC_PTR, \
+					ec_keyset_t EC_PTR));
 
 /** Dispose the supplied Encounter context. */
-void encounter_term __P((encounter_t *ctx));
+void encounter_term __P((encounter_t EC_PTR));
 
 /**
  *  \}
