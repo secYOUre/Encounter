@@ -102,10 +102,6 @@ encounter_err_t encounter_crypto_openssl_cmp(encounter_t *, \
 		                 ec_count_t *, ec_count_t *,\
                                  ec_keyctx_t *, ec_keyctx_t *, int *);
 
-encounter_err_t encounter_crypto_openssl_private_cmp(encounter_t *, \
-		                 ec_count_t *, ec_count_t *,\
-                                 ec_keyctx_t *, ec_keyctx_t *, int *);
-
 encounter_err_t encounter_crypto_openssl_private_cmp2(encounter_t *, \
 		                 ec_count_t *, ec_count_t *,\
                                  ec_keyctx_t *, ec_keyctx_t *, int *);
